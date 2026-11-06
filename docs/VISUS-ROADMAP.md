@@ -141,6 +141,7 @@ If a command fails to start, report the error and stop.
 - **Status (2026-11-06): built, not yet fully accepted.**
   - Done:
     - V-01 (re-entrant counter and self-heal), V-02, V-03, V-04, V-05, V-06, V-14, V-16 and L8 (rate limit, game-log copies, toast).
+    - V-17 in 0.2.1: GL error 0x4AE on the first Flywheel draw (stale `ExtendedShader` bind skip, the same as in Oculus 1.8.0).
     - Upstream Oculus fixes #760 and #763.
   - Passed so far:
     - T0: 36 tests.
@@ -151,7 +152,6 @@ If a command fails to start, report the error and stop.
     - T5 scenarios 1, 5 and 9.
     - The 30-minute nesting scene.
     - T4 on a second pack.
-    - V-17 (GL error 0x4AE at world join), which the next run's stack trace will locate.
 - **Done differently:**
   - **V-01:** only the crash fix shipped. The sort-key ordering with FIFO order moved to 0.6, item 4, because it changes draw order and needs T3.
   - **V-02:** Oculus's arithmetic is kept bit for bit (no `fma`), so finite results do not change.

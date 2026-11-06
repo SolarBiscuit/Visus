@@ -44,7 +44,6 @@ import java.util.function.Consumer;
 
 public class ExtendedShader extends ShaderInstance implements ShaderInstanceInterface {
 	private static final Matrix4f identity;
-	private static ExtendedShader lastApplied;
 
 	static {
 		identity = new Matrix4f();
@@ -122,7 +121,6 @@ public class ExtendedShader extends ShaderInstance implements ShaderInstanceInte
 	public void clear() {
 		ProgramUniforms.clearActiveUniforms();
 		ProgramSamplers.clearActiveSamplers();
-		lastApplied = null;
 
 		if (this.blendModeOverride != null || hasOverrides) {
 			BlendModeOverride.restore();
@@ -135,10 +133,11 @@ public class ExtendedShader extends ShaderInstance implements ShaderInstanceInte
 	public void apply() {
 		CapturedRenderingState.INSTANCE.setCurrentAlphaTest(alphaTest);
 
-		if (lastApplied != this) {
-			lastApplied = this;
-			ProgramManager.glUseProgram(this.getId());
-		}
+		// V-17: always bind. Oculus skipped the bind when this shader was the last one applied, but a raw
+		// glUseProgram(0) or another program bound in between (Flywheel's GlProgram.unbind() after irisflw compiles a
+		// program) left the cache stale, so the uniform uploads below ran with no program bound (GL_INVALID_OPERATION).
+		// clear() already reset the cache after every normal draw, so the skip saved almost nothing.
+		ProgramManager.glUseProgram(this.getId());
 
 		if (intensitySwizzle) {
 			IrisRenderSystem.texParameteriv(RenderSystem.getShaderTexture(0), TextureType.TEXTURE_2D.getGlType(), ARBTextureSwizzle.GL_TEXTURE_SWIZZLE_RGBA,

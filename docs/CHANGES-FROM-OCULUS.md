@@ -31,6 +31,10 @@ The full history is in git: upstream commits, then Visus commits on top.
   - `NOTICE` rewritten.
 - **No code changes.**
 
+## 2026-11-06: Visus 0.2.1
+- **`ExtendedShader`** (V-17): `apply()` always calls `glUseProgram`. The static `lastApplied` skip is removed; it went
+  stale when Flywheel bound program 0 between irisflw's compile-time `bind()` and the first draw.
+
 ## 2026-11-06: Visus 0.2.0 "Stability"
 Each change is tagged with its bug-ledger ID from `docs/VISUS-ARCHITECTURE.md` §7.
 - **`batchedentityrendering`** (V-01):

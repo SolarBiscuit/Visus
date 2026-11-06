@@ -5,6 +5,25 @@ Versioning:
 - +0.1.0 when a change adds or removes 500+ lines (patch resets to 0).
 - 1.0.0 only when requested.
 
+## 0.2.1 (2026-11-06)
+- **No GL errors on the first Flywheel draw (V-17).**
+  - Each new irisflw instancing program drew its first frame with no program bound, so all of its uniform uploads failed.
+    With debug options on this logged a burst of GL error 0x4AE (`GL_INVALID_OPERATION`) when Flywheel objects first rendered.
+    It was harmless after that one draw.
+  - Cause: `ExtendedShader.apply()` skipped `glUseProgram` when it was the last shader applied. Flywheel unbinds
+    (`glUseProgram(0)`) after compiling a program without calling `clear()`, so that cache went stale. The code is
+    unchanged from Oculus 1.8.0, so Oculus has the same bug; Oculus only printed it to stderr.
+  - `apply()` now always binds its program. `clear()` already reset the cache after every normal draw, so the skip
+    saved almost nothing.
+- **Measured** (clientbench, RatPack 2.9 TestClient, Photon 1.3b RatPatch, debug options on):
+  - 0.2.0: 7 copies of 0x4AE per session. A diagnostic build showed `skippedBind=true`, current program 0, upload
+    error 0x502, on all 3 irisflw programs.
+  - 0.2.1: 0 GL debug messages in the whole session (the Flywheel test rig placed and rendered). T1 against Oculus
+    1.8.0: PASS (the only extra files are the allowed irisflw dumps).
+  - Frame rate in that single debug-mode run: base 128.1 FPS (p99 15.05 ms), overview 148.2 FPS (p99 13.34 ms). The
+    two 0.2.0 debug runs of the same jar gave 126.0–140.4 and 151.6–152.7 FPS, so this is within single-run noise;
+    no T4 was run. The 0.3.0 T4 rechecks overview p99.
+
 ## 0.2.0 (2026-11-06) "Stability"
 Crash and corruption fixes. No pack-visible change except `centerDepth.fsh`'s NaN guard. Bug IDs refer to
 `docs/VISUS-ARCHITECTURE.md` §7.
@@ -43,7 +62,7 @@ Crash and corruption fixes. No pack-visible change except `centerDepth.fsh`'s Na
 - **GL errors in the game log (L8, V-17).**
   - The first copies of each GL debug message now also go to `latest.log`, with a stack trace on the first.
   - Oculus wrote them only to stderr, which launchers often do not save.
-  - Doing this found V-17: a burst of 7 copies of GL error 0x4AE at world join. Not yet traced.
+  - Doing this found V-17: a burst of 7 copies of GL error 0x4AE at world join. Fixed in 0.2.1.
 - **Tests.** 36 JUnit T0 tests (`gradlew test`), each tied to a bug ID. Most compare against the Oculus arithmetic.
 - **Measured** (clientbench, RatPack 2.9 TestClient, RX 7900 XTX, Java 25):
   - **T1, all 5 packs: PASS.** Transformed GLSL is identical to Oculus 1.8.0 on every program:
