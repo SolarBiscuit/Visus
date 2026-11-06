@@ -5,6 +5,67 @@ Versioning:
 - +0.1.0 when a change adds or removes 500+ lines (patch resets to 0).
 - 1.0.0 only when requested.
 
+## 0.2.0 (2026-11-06) "Stability"
+Crash and corruption fixes. No pack-visible change except `centerDepth.fsh`'s NaN guard. Bug IDs refer to
+`docs/VISUS-ARCHITECTURE.md` §7.
+- **No more "Already in a group" crash (V-01).**
+  - Entity render groups now nest. An entity rendered from inside another entity's renderer (Curios, armor layers, Mekasuit) joins the outer group instead of throwing.
+  - An unmatched group end is ignored.
+  - Any group left open by a renderer that threw is closed at the start of the next frame, with one log line.
+- **NaN-safe smoothing (V-02).**
+  - `SmoothedFloat` (exposure and other smoothed uniforms) and `centerDepth.fsh` (`centerDepthSmooth`) can no longer latch NaN or Inf, which caused a black or blown-out screen.
+  - Covers a half-life of 0, a frame with no time step, and a NaN sample.
+  - For finite input the values are bit-identical to Oculus.
+- **No NaN tangents on modded models (V-03).**
+  - Degenerate, collinear or single-texel UVs used to produce a zero tangent, which packs normalised to NaN (TAA and bloom smears).
+  - They now get a unit tangent perpendicular to the normal.
+  - Every other tangent is unchanged.
+- **Shadow culling with an infinite far plane (V-04).** A plane with no normal is skipped instead of being used for back-plane and edge-plane tests. Finite projections cull exactly as before.
+- **No "pipeline is null" crash (V-05).**
+  - Sky, cloud and weather hooks that run outside `renderLevel` use a stateless no-op pipeline.
+  - So does the rest of a frame in which the pipeline was destroyed.
+  - `Iris.reload()` called during a level render now runs at the end of the frame (NeoVoxy #30).
+- **Matching depth formats (V-06).**
+  - `depthtex1`/`depthtex2` are allocated in the driver's real sized depth format, read back from the depth and stencil bits.
+  - So copying the depth buffer can no longer fail with "depth formats do not match", for example with stencil mods.
+- **Bind caches no longer skip binds (V-14).**
+  - The framebuffer and program bind caches no longer cancel binds they think are redundant.
+  - The program cache went stale when Xenon/Embeddium bound programs through raw GL.
+  - Binds are now only recorded, in `dev.visus.gl.BindTracker`.
+- **Quieter GL debug output (L8).**
+  - The first 5 copies of each message are printed in full.
+  - Repeats are counted and summarised once a minute.
+- **Pack failure toast (L8).** When a pack fails to load, a toast appears as well as the chat line, and rendering falls back to vanilla as before.
+- **Shader dumps (V-16).** Debug dumps now write the Oculus Flywheel Compat programs. Their names contained `/`, so writing failed. One failed file also no longer stops the rest.
+- **Upstream Oculus fixes:**
+  - #760: memory corruption in `GlyphExtVertexSerializer`.
+  - #763: Mekanism flamethrower crash.
+- **GL errors in the game log (L8, V-17).**
+  - The first copies of each GL debug message now also go to `latest.log`, with a stack trace on the first.
+  - Oculus wrote them only to stderr, which launchers often do not save.
+  - Doing this found V-17: a burst of 7 copies of GL error 0x4AE at world join. Not yet traced.
+- **Tests.** 36 JUnit T0 tests (`gradlew test`), each tied to a bug ID. Most compare against the Oculus arithmetic.
+- **Measured** (clientbench, RatPack 2.9 TestClient, RX 7900 XTX, Java 25):
+  - **T1, all 5 packs: PASS.** Transformed GLSL is identical to Oculus 1.8.0 on every program:
+    - Complementary Unbound r5.9.3: 425 files.
+    - Photon 1.3b RatPatch: 451 files.
+    - Glimmer 1.5.2: 458 files.
+    - MakeUp-UltraFast 9.5e: 375 files.
+    - Solas 3.7 RatPatch: 427 files.
+    - The only additions are the 9–18 irisflw program files that V-16 now writes (`golden/CHANGES.md`).
+  - **Log errors.** The same ERROR set as Oculus on all 5 packs, ignoring Xaero's online version check.
+  - **Absent from all logs:** "Already in a group", "pipeline is null", leftover render groups, and deferred reloads.
+  - **T4, Photon, 3 alternating runs per side, with a 3-minute GPU cooldown after each run** (2560x1421: the window came up 19 px short, the same in every run):
+    - Base scene: 138.6 ± 4.9 → 136.0 ± 13.7 FPS (−1.9 %).
+    - Overview scene: 155.4 ± 3.8 → 152.4 ± 5.5 FPS (−1.9 %).
+    - Both are within the ±5–6 % noise. Overview p99 is 11.14 → 12.24 ms (+9.9 %), but one outlier run causes it (13.55 ms); without that run the change is about +4 %. Recheck in the 0.3.0 T4.
+    - Single debug-mode dump runs had shown −17 % on Photon. These runs did not reproduce that: those dump runs ran back to back with no cooldown, in a different session from their references.
+- **Moved:**
+  - V-01's FIFO draw order goes to 0.6 (it changes draw order, so it needs T3).
+  - V-06b's blend/depth override work goes to 0.3.
+  - Upstream #806 (`IS_OCULUS`) goes to 0.8.
+  - Upstream #789 goes to 0.3.
+
 ## 0.1.1 (2026-11-06)
 - **Licence: AGPL-3.0-only.**
   - The Visus jar is now licensed under the GNU AGPL v3.0, because the bundled glsl-transformer library is AGPL.

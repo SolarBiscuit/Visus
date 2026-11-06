@@ -63,6 +63,14 @@ sourceSets {
 			runtimeClasspath += vendored.output
 		}
 	}
+
+	// T0 unit tests (docs/VISUS-ROADMAP.md, "Test tiers"). They exercise pure code only: no GL context, no game.
+	test {
+		java {
+			compileClasspath += main.output + vendored.output
+			runtimeClasspath += main.output + vendored.output
+		}
+	}
 }
 
 loom {
@@ -116,6 +124,18 @@ dependencies {
 		transitive = false
 	}
 	forgeRuntimeLibrary(implementation(include("org.anarres:jcpp:1.4.14")))
+
+	testImplementation(platform("org.junit:junit-bom:5.10.2"))
+	testImplementation("org.junit.jupiter:junit-jupiter")
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+test {
+	useJUnitPlatform()
+	testLogging {
+		events "failed"
+		exceptionFormat "full"
+	}
 }
 
 processResources {

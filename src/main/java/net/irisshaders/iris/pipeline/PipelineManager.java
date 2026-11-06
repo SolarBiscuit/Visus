@@ -19,6 +19,8 @@ public class PipelineManager {
 	private final Map<NamespacedId, WorldRenderingPipeline> pipelinesPerDimension = new HashMap<>();
 	private WorldRenderingPipeline pipeline = new VanillaRenderingPipeline();
 	private int versionCounterForSodiumShaderReload = 0;
+	// Visus V-05: how many LevelRenderer#renderLevel calls are on the stack (more than one with Immersive Portals).
+	private int levelRenderDepth = 0;
 
 	public PipelineManager(Function<NamespacedId, WorldRenderingPipeline> pipelineFactory) {
 		this.pipelineFactory = pipelineFactory;
@@ -54,6 +56,38 @@ public class PipelineManager {
 
 	public Optional<WorldRenderingPipeline> getPipeline() {
 		return Optional.ofNullable(pipeline);
+	}
+
+	/**
+	 * Visus V-05: the current pipeline, or the stateless {@link NoOpPipeline} when none is prepared (between
+	 * {@link #destroyPipeline()} and the next {@link #preparePipeline}). Never null, so render hooks that run outside
+	 * {@code renderLevel} or after a mid-frame reload cannot throw "this.pipeline is null" (Iris #2560).
+	 */
+	public WorldRenderingPipeline getPipelineOrNoOp() {
+		WorldRenderingPipeline current = pipeline;
+		return current != null ? current : NoOpPipeline.INSTANCE;
+	}
+
+	/** Visus V-05: called by the LevelRenderer mixin at the start of {@code renderLevel}. */
+	public void onLevelRenderStart() {
+		levelRenderDepth++;
+	}
+
+	/** Visus V-05: called by the LevelRenderer mixin at the end of {@code renderLevel}. */
+	public void onLevelRenderEnd() {
+		if (levelRenderDepth > 0) {
+			levelRenderDepth--;
+		}
+	}
+
+	/** Visus V-05: true while a level is being rendered, when destroying the pipeline would break the frame. */
+	public boolean isRenderingLevel() {
+		return levelRenderDepth > 0;
+	}
+
+	/** Visus V-05: called at a frame boundary, where no level render can be in progress. */
+	public void clearLevelRenderState() {
+		levelRenderDepth = 0;
 	}
 
 	/**

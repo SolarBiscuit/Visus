@@ -22,6 +22,17 @@ import java.util.OptionalInt;
 
 public class VanillaRenderingPipeline implements WorldRenderingPipeline {
 	public VanillaRenderingPipeline() {
+		this(true);
+	}
+
+	/**
+	 * @param applyWorldSettings false only for {@link NoOpPipeline}, which must not change world rendering settings
+	 */
+	protected VanillaRenderingPipeline(boolean applyWorldSettings) {
+		if (!applyWorldSettings) {
+			return;
+		}
+
 		WorldRenderingSettings.INSTANCE.setDisableDirectionalShading(shouldDisableDirectionalShading());
 		WorldRenderingSettings.INSTANCE.setUseSeparateAo(false);
 		WorldRenderingSettings.INSTANCE.setSeparateEntityDraws(false);

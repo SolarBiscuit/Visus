@@ -6,4 +6,10 @@ public interface Groupable {
 	boolean maybeStartGroup();
 
 	void endGroup();
+
+	/**
+	 * Visus V-01: closes any group still open from an earlier frame. Called at the start of each level render.
+	 */
+	default void resetGroupState() {
+	}
 }

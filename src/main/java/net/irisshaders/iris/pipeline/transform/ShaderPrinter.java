@@ -1,5 +1,6 @@
 package net.irisshaders.iris.pipeline.transform;
 
+import dev.visus.util.FileNames;
 import net.irisshaders.iris.Iris;
 import org.apache.commons.io.FilenameUtils;
 
@@ -79,7 +80,8 @@ public class ShaderPrinter {
 
 		private void addItem(String extension, String content) {
 			if (content != null && sources != null) {
-				sources.add(prefix + name + extension);
+				// Visus V-16: add-on program names can contain '/', which made the write fail; pack names are unchanged.
+				sources.add(prefix + FileNames.sanitize(name) + extension);
 				sources.add(content);
 			}
 		}
@@ -139,12 +141,13 @@ public class ShaderPrinter {
 					outputLocationCleared = true;
 				}
 
-				try {
-					for (int i = 0; i < sources.size(); i += 2) {
+				// Visus V-16: one failed file no longer stops the rest of the program's files from being written.
+				for (int i = 0; i < sources.size(); i += 2) {
+					try {
 						Files.writeString(debugOutDir.resolve(sources.get(i)), sources.get(i + 1));
+					} catch (IOException e) {
+						Iris.logger.warn("Failed to write debug patched shader source {}", sources.get(i), e);
 					}
-				} catch (IOException e) {
-					Iris.logger.warn("Failed to write debug patched shader source", e);
 				}
 			}
 		}

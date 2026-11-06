@@ -5,6 +5,7 @@
 
 package net.irisshaders.iris.gl;
 
+import dev.visus.gl.DebugMessageLimiter;
 import net.irisshaders.iris.Iris;
 import org.lwjgl.opengl.AMDDebugOutput;
 import org.lwjgl.opengl.ARBDebugOutput;
@@ -21,6 +22,34 @@ import java.io.PrintStream;
 import java.util.function.Consumer;
 
 public final class GLDebug {
+	// Visus L8: the first few copies of each (source, id) message are printed in full, later ones are counted and
+	// summarised once a minute, so a GL error repeated every frame cannot flood the log and stall the render thread.
+	private static final DebugMessageLimiter LIMITER = new DebugMessageLimiter();
+
+	/**
+	 * Visus L8: LWJGL's debug stream is stderr, which many launchers do not save, so the first reports of each message
+	 * also go to the game log as one line. The first copy of each message carries a stack trace, so the GL call
+	 * that raised it can be found even when the driver gives no detail (a non-debug context).
+	 */
+	private static void logToGameLog(boolean withTrace, int id, String source, String type, String severity, String message) {
+		String hexId = Integer.toHexString(id).toUpperCase(java.util.Locale.ROOT);
+
+		if (withTrace) {
+			Iris.logger.warn("[GL] Debug message 0x{} ({}, {}, {}): {}", hexId, source, type, severity, message,
+				new Throwable("GL debug message 0x" + hexId + " raised here"));
+		} else {
+			Iris.logger.warn("[GL] Debug message 0x{} ({}, {}, {}): {}", hexId, source, type, severity, message);
+		}
+	}
+
+	private static void logSuppressedSummary() {
+		String summary = LIMITER.pollSummary();
+
+		if (summary != null) {
+			Iris.logger.warn(summary);
+		}
+	}
+
 	private static DebugState debugState;
 
 	/**
@@ -78,6 +107,11 @@ public final class GLDebug {
 		if (caps.OpenGL43) {
 			Iris.logger.info("[GL] Using OpenGL 4.3 for error logging.");
 			GLDebugMessageCallback proc = GLDebugMessageCallback.create((source, type, id, severity, length, message, userParam) -> {
+				if (!LIMITER.shouldPrint(source, id)) {
+					logSuppressedSummary();
+					return;
+				}
+				logToGameLog(LIMITER.timesSeen(source, id) == 1, id, getDebugSource(source), getDebugType(type), getDebugSeverity(severity), GLDebugMessageCallback.getMessage(length, message));
 				stream.println("[LWJGL] OpenGL debug message");
 				printDetail(stream, "ID", String.format("0x%X", id));
 				printDetail(stream, "Source", getDebugSource(source));
@@ -100,6 +134,11 @@ public final class GLDebug {
 		} else if (caps.GL_KHR_debug) {
 			Iris.logger.info("[GL] Using KHR_debug for error logging.");
 			GLDebugMessageCallback proc = GLDebugMessageCallback.create((source, type, id, severity, length, message, userParam) -> {
+				if (!LIMITER.shouldPrint(source, id)) {
+					logSuppressedSummary();
+					return;
+				}
+				logToGameLog(LIMITER.timesSeen(source, id) == 1, id, getDebugSource(source), getDebugType(type), getDebugSeverity(severity), GLDebugMessageCallback.getMessage(length, message));
 				stream.println("[LWJGL] OpenGL debug message");
 				printDetail(stream, "ID", String.format("0x%X", id));
 				printDetail(stream, "Source", getDebugSource(source));
@@ -122,6 +161,11 @@ public final class GLDebug {
 		} else if (caps.GL_ARB_debug_output) {
 			Iris.logger.info("[GL] Using ARB_debug_output for error logging.");
 			GLDebugMessageARBCallback proc = GLDebugMessageARBCallback.create((source, type, id, severity, length, message, userParam) -> {
+				if (!LIMITER.shouldPrint(source, id)) {
+					logSuppressedSummary();
+					return;
+				}
+				logToGameLog(LIMITER.timesSeen(source, id) == 1, id, getSourceARB(source), getTypeARB(type), getSeverityARB(severity), GLDebugMessageARBCallback.getMessage(length, message));
 				stream.println("[LWJGL] ARB_debug_output message");
 				printDetail(stream, "ID", String.format("0x%X", id));
 				printDetail(stream, "Source", getSourceARB(source));
@@ -139,6 +183,11 @@ public final class GLDebug {
 		} else if (caps.GL_AMD_debug_output) {
 			Iris.logger.info("[GL] Using AMD_debug_output for error logging.");
 			GLDebugMessageAMDCallback proc = GLDebugMessageAMDCallback.create((id, category, severity, length, message, userParam) -> {
+				if (!LIMITER.shouldPrint(category, id)) {
+					logSuppressedSummary();
+					return;
+				}
+				logToGameLog(LIMITER.timesSeen(category, id) == 1, id, getCategoryAMD(category), "", getSeverityAMD(severity), GLDebugMessageAMDCallback.getMessage(length, message));
 				stream.println("[LWJGL] AMD_debug_output message");
 				printDetail(stream, "ID", String.format("0x%X", id));
 				printDetail(stream, "Category", getCategoryAMD(category));
@@ -299,6 +348,7 @@ public final class GLDebug {
 	}
 
 	public static void reloadDebugState() {
+		LIMITER.reset();
 		if (Iris.getIrisConfig().areDebugOptionsEnabled() && (GL.getCapabilities().GL_KHR_debug || GL.getCapabilities().OpenGL43)) {
 			debugState = new KHRDebugState();
 		} else {

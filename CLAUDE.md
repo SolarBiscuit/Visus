@@ -32,3 +32,5 @@ Start here, then read only what your task needs:
 - Sonnet 5.5: T3, T4, T5 and fixes that come with a failing test.
 - Opus: transformer, IR, GL lifecycle, API design.
 - clientbench noise is ±5–6 %. Only trust differences of 8–10 % or more, from ≥ 3 alternating runs per side.
+- After every in-game test, give the GPU a cooldown: 3 min after a run shorter than 10 min, 4 min after a longer one. `bench.py run` does this for you; never pass `--no-cooldown` for a real batch.
+- T1: wait for `results/<tag>/summary.json` before comparing a dump. Bench copies `patched_shaders/` before it writes the summary.

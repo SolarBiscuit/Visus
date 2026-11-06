@@ -98,6 +98,12 @@ public class AdvancedShadowCullingFrustum extends Frustum {
 		boolean[] isBack = new boolean[planes.length];
 
 		for (int planeIndex = 0; planeIndex < planes.length; planeIndex++) {
+			if (baseClippingPlanes.isDegenerate(planeIndex)) {
+				// Visus V-04: no normal (infinite far plane): it bounds nothing, so it is neither a back nor an edge plane.
+				isBack[planeIndex] = false;
+				continue;
+			}
+
 			Vector4f plane = planes[planeIndex];
 			Vector3f planeNormal = truncate(plane);
 
@@ -135,19 +141,19 @@ public class AdvancedShadowCullingFrustum extends Frustum {
 
 			NeighboringPlaneSet neighbors = NeighboringPlaneSet.forPlane(planeIndex);
 
-			if (!isBack[neighbors.plane0()]) {
+			if (!isBack[neighbors.plane0()] && !baseClippingPlanes.isDegenerate(neighbors.plane0())) {
 				addEdgePlane(plane, planes[neighbors.plane0()]);
 			}
 
-			if (!isBack[neighbors.plane1()]) {
+			if (!isBack[neighbors.plane1()] && !baseClippingPlanes.isDegenerate(neighbors.plane1())) {
 				addEdgePlane(plane, planes[neighbors.plane1()]);
 			}
 
-			if (!isBack[neighbors.plane2()]) {
+			if (!isBack[neighbors.plane2()] && !baseClippingPlanes.isDegenerate(neighbors.plane2())) {
 				addEdgePlane(plane, planes[neighbors.plane2()]);
 			}
 
-			if (!isBack[neighbors.plane3()]) {
+			if (!isBack[neighbors.plane3()] && !baseClippingPlanes.isDegenerate(neighbors.plane3())) {
 				addEdgePlane(plane, planes[neighbors.plane3()]);
 			}
 		}

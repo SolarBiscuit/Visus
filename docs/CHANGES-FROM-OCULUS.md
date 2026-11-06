@@ -31,10 +31,33 @@ The full history is in git: upstream commits, then Visus commits on top.
   - `NOTICE` rewritten.
 - **No code changes.**
 
-## Upstream commits after 1.8.0 that are not in Visus yet
-| Commit | Change | Visus plan |
+## 2026-11-06: Visus 0.2.0 "Stability"
+Each change is tagged with its bug-ledger ID from `docs/VISUS-ARCHITECTURE.md` §7.
+- **`batchedentityrendering`** (V-01):
+  - `GraphTranslucencyRenderOrderManager` uses a re-entrant `GroupDepth` counter. Nested and unmatched group calls no longer throw.
+  - `RenderOrderManager` and `Groupable` gain a default `resetGroupState()`. `FullyBufferedMultiBufferSource` and its wrapper forward it.
+  - The batched `MixinLevelRenderer` calls it at the start of each level render.
+- **`SmoothedFloat`** (V-02): the smoothing step moved to `dev.visus.math.SafeSmoothing`. Its arithmetic is unchanged for finite input.
+- **`centerDepth.fsh`** (V-02): NaN and Inf guards. Listed in `golden/CHANGES.md`.
+- **`NormalHelper`** (V-03): the three `computeTangent*` methods fall back to `fallbackTangent` (Frisvad basis) when the tangent is zero, Inf or NaN.
+- **`BaseClippingPlanes`, `AdvancedShadowCullingFrustum`** (V-04): planes with no normal (an infinite far plane) are flagged and skipped.
+- **Pipeline lifecycle** (V-05):
+  - New `NoOpPipeline` (a `VanillaRenderingPipeline` subclass, with a new protected constructor that skips the world settings).
+  - `PipelineManager` gains `getPipelineOrNoOp()` and a level-render depth.
+  - `MixinLevelRenderer`'s pipeline field is never null and reads through `visus$pipeline()`.
+  - `Iris.reload()` defers to the next frame boundary when called during a level render.
+- **`TextureInfoCache`, `IrisRenderingPipeline`** (V-06): depth copies are allocated from the queried sized depth format (`getSizedDepthFormat()`).
+- **`MixinGlStateManager_FramebufferBinding`** (V-14): records binds in `dev.visus.gl.BindTracker` and no longer cancels any bind.
+- **`GLDebug`** (L8): rate-limited through `dev.visus.gl.DebugMessageLimiter`.
+- **`Iris.createPipeline`** (L8): shows a toast when the pack fails to load.
+- **`ShaderPrinter`** (V-16): sanitises file names, and one failed write no longer skips the remaining files.
+- **Upstream fixes:** cherry-picked #760 and #763 (table below).
+- **Build:** JUnit 5 T0 tests in `src/test`.
+
+## Upstream commits after 1.8.0
+| Commit | Change | Visus |
 |---|---|---|
-| `a0b9d31a4` (#760) | Fixes memory corruption in `GlyphExtVertexSerializer` | 0.2.0 (stability) |
-| `3f70af20f` (#763) | Fixes the Mekanism flamethrower crash (`LightningHandler` vertex format) | 0.2.0 |
-| `b50faac79` (#806) | Adds the `IS_OCULUS` standard macro | 0.2.0. Pack-visible, so it is listed in `golden/CHANGES.md` |
-| `b3b278134` (#789) | Embeddium update; `CuboidMixin` change | 0.2.0, after a check against Xenon 0.3.31 |
+| `a0b9d31a4` (#760) | Fixes memory corruption in `GlyphExtVertexSerializer` | **In 0.2.0** (cherry-picked) |
+| `3f70af20f` (#763) | Fixes the Mekanism flamethrower crash (`LightningHandler` vertex format) | **In 0.2.0** (cherry-picked) |
+| `b50faac79` (#806) | Adds the `IS_OCULUS` standard macro | 0.8 (pack SDK). It adds a define to every pack program, which 0.2.0's "no pack GLSL change" rule forbids; it goes in with the other feature-flag backports and gets a `golden/CHANGES.md` entry. |
+| `b3b278134` (#789) | Embeddium dev dependency 0.3.14 to 0.3.31; `CuboidMixin` implements `embeddium$getSimpleCuboid` | 0.3.0, with the Embeddium dev dependency bump. Checked against Xenon 0.3.31: only Xenon's `features.render.entity.fast_render` mixins call that method, and Visus's `sodium:options` turns them off, so it cannot be reached today. |

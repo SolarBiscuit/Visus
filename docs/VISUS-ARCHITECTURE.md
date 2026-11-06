@@ -343,6 +343,7 @@ L0 Platform: caps probe, driver quirks DB, state cache, unit allocator
 | V-14 | Stale framebuffer-bind skips even with shaders off (Atmospherics workaround) | Redundant-bind cache out of sync with real binds | L0 state cache | T5 Atmospherics with its workaround off | 0.2 |
 | V-15 | Mod `ShaderInstance` visuals vanish under packs (Oculus #809) | No route into the G-buffer | §5 L5 transpiler | T5 mod-shader gallery scene | 0.7 |
 | V-16 | With debug options on, a "Failed to write debug patched shader source" `NoSuchFileException` is logged for every irisflw program (found in 0.1.0 dump runs, same on Oculus) | `ShaderPrinter` builds the file name from a program name containing `/` and never creates the parent folders | Sanitise the name (`/` to `_`) or create the parent folders | T1 dump run with irisflw installed: no warnings, files present | 0.2 |
+| V-17 | 7 copies of GL error 0x4AE (API, ERROR, HIGH) in one burst at world join, on Photon, CU, Glimmer and MakeUp under Visus 0.2.0. Found by the new L8 logging; Oculus 1.8.0 sends these messages only to stderr, which the bench does not save, so whether it also happens there is unknown | Unknown: the context is not a debug context, so the driver gives no detail | From 0.2.0 the first copy of each GL message carries a stack trace in the game log. Read it from the next run and fix at the call site | T1 dump run: no `[GL] Debug message` lines | 0.2.x |
 
 Every fix ships with a test that fails without it.
 

@@ -100,9 +100,10 @@ If a command fails to start, report the error and stop.
   - T2 green.
   - The TestClient boots with Visus in place of Oculus, with irisflw still installed (the guard comes in 0.3).
 - **Delegation:** Opus does steps 1–4. Sonnet does 5–6 and the spikes. Haiku runs T1 and T2 and summarises.
-- **Status (2026-11-06):** steps 1–4, 6 and 7 are done. Step 5 is partly done: T1 golden dumps for
-  Complementary Unbound (PASS) and Photon. Still open: T1 for Glimmer, MakeUp and Solas; option-set variants;
-  T3 screenshots; T4 baseline tags with ≥ 3 runs per side.
+- **Status (2026-11-06):** steps 1–4, 6 and 7 are done. Step 5 is partly done.
+  - Oculus 1.8.0 T1 reference dumps exist for all 5 packs: `clientbench/results/oculus-{cu,photon,glimmer,makeup,solas}-dump-1`.
+  - Visus 0.1.0 matched on CU and Photon.
+  - Still open: option-set variants, T3 screenshots, and T4 baseline tags with ≥ 3 runs per side.
 - **Done differently from the plan:**
   - The build stays on **Architectury Loom**, as upstream does, rather than moving to FG6. Changing the build system
     would put byte-for-byte parity at risk. Revisit only if Loom gets in the way.
@@ -137,6 +138,30 @@ If a command fails to start, report the error and stop.
   - T4 within noise.
   - No `Already in a group` in 30 minutes of the nesting scene.
 - **Delegation:** Opus does V-05 and the L0 state cache. Sonnet does V-01…V-04, V-06 and L8, each starting from a failing test. Haiku runs T0, T1 and T2.
+- **Status (2026-11-06): built, not yet fully accepted.**
+  - Done:
+    - V-01 (re-entrant counter and self-heal), V-02, V-03, V-04, V-05, V-06, V-14, V-16 and L8 (rate limit, game-log copies, toast).
+    - Upstream Oculus fixes #760 and #763.
+  - Passed so far:
+    - T0: 36 tests.
+    - T1: identical on all 5 packs.
+    - T2: 0 missing.
+    - T4 on Photon: within noise, 3+3 runs.
+  - Still open:
+    - T5 scenarios 1, 5 and 9.
+    - The 30-minute nesting scene.
+    - T4 on a second pack.
+    - V-17 (GL error 0x4AE at world join), which the next run's stack trace will locate.
+- **Done differently:**
+  - **V-01:** only the crash fix shipped. The sort-key ordering with FIFO order moved to 0.6, item 4, because it changes draw order and needs T3.
+  - **V-02:** Oculus's arithmetic is kept bit for bit (no `fma`), so finite results do not change.
+  - **V-03:** the fallback applies only to degenerate tangents. Gram–Schmidt on every tangent would have changed vertex data, and so the pixels.
+  - **V-04:** the forward [-1,1] and [0,1] conventions were already conservative, and reversed-Z already worked, as plain plane inequalities. The real defect was the zero-normal plane of an infinite far plane, so that is what was fixed.
+  - **V-05:** no `AtomicReference`, because only the render thread touches the pipeline. Instead there is a `NoOpPipeline`, a destroy-generation check, and a deferred `Iris.reload()`.
+  - **V-06b:** moved to 0.3, item 8.
+  - **V-14:** the bind caches are now track-only. The program cache was a real stale-skip hazard, because Xenon binds programs through raw GL.
+  - **L8:** the existing vanilla fallback and chat line are kept, and a toast is added. The `#include`-mapped error screen stays in 0.8.
+  - **clientbench:** every run now ends with a GPU cooldown (3 min, or 4 min after a run over 10 min).
 
 ## 0.3.0 "Absorb"
 - **Goal:** one jar replaces Oculus + irisflw + particle fix + GeckoLib fix + RatOpt `oculus_shaders` + CoO `[oculus]`.
@@ -156,6 +181,13 @@ If a command fails to start, report the error and stop.
   5. **Particles:** Forge comparator order; classify by render state.
   6. **Add-on guard:** remove the mixin configs of irisflw, oculusparticlefix, geckoanimfix and Oculus Unlocked; show a toast and log a line. Fall back to `(,0)` declarations if that is unsafe.
   7. A JFR frame event equivalent to RatOpt's `ratopt.Frame`, so clientbench works without RatOpt's Oculus module.
+  8. **V-06b (moved here from 0.2.0):** the deferred blend and depth/colour-mask overrides (`MixinGlStateManager_BlendOverride`, `_DepthColorOverride`) against Forge stage events.
+     - Start from the T5 reproduction: Atmospherics' horizon fade with its workaround removed.
+     - 0.2.0 only made the framebuffer and program bind caches safe (V-14). The DSA texture binds already update `GlStateManager`.
+  9. **Oculus upstream #789** (`b3b278134`):
+     - Bump the Embeddium dev dependency to 0.3.31.
+     - Make `CuboidMixin` implement `embeddium$getSimpleCuboid` (Xenon 0.3.31 declares it).
+     - Today it is reached only by Xenon's fast-render entity mixins, which Visus's `sodium:options` turns off.
 - **Invariants:**
   - T1 identical for non-Flywheel programs.
   - Flywheel programs get new goldens, listed in `golden/CHANGES.md`.
@@ -216,6 +248,8 @@ If a command fails to start, report the error and stop.
   2. Uniform dirty tracking, if not already effective.
   3. Compiled custom-uniform evaluator. Gate: the differential test passes, and ≥ 0.1 ms saved per frame on the pack with the most custom uniforms.
   4. Sort-key batcher with flat arrays and a radix sort, replacing the graph manager. The debug option stays one more release.
+     This carries the part of V-01 moved out of 0.2.0: FIFO order for depthless and translucent types (Iris #2897).
+     It changes draw order, so it needs T3 screenshots against the graph order before it becomes the default.
   5. Shadow entity and block-entity budget, plus pose reuse.
   6. IR: skip dead clears and flips; minimal barriers.
   7. An allocation sweep of hot paths: render-thread allocations from Visus code at 0 B/frame (`jfr_alloc.py`).
@@ -242,6 +276,7 @@ If a command fails to start, report the error and stop.
   - `docs/packdev/`: the uniforms reference generated from catalog annotations, the properties reference, feature flags, `visus.*` extensions, debugging, mod integration, and differences from Oculus.
   - Debug tools: an error screen with line numbers mapped through `#include`, `KHR_debug` labels, a GPU pass-timing overlay, a render-target viewer, `/visus dump`.
   - Backport the upstream feature flags, one at a time, each with goldens.
+  - Oculus upstream #806 (`IS_OCULUS` standard macro, `b50faac79`). It was moved out of 0.2.0 because it adds a define to every pack program.
 - **Acceptance:**
   - The docs build from source; every uniform in the catalog is documented (a CI check).
   - Each backport has a test pack in `golden/featurepacks/`.

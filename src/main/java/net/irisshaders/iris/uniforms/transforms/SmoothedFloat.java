@@ -1,5 +1,6 @@
 package net.irisshaders.iris.uniforms.transforms;
 
+import dev.visus.math.SafeSmoothing;
 import net.irisshaders.iris.gl.uniform.FloatSupplier;
 import net.irisshaders.iris.uniforms.FrameUpdateNotifier;
 import net.irisshaders.iris.uniforms.SystemTimeUniforms;
@@ -107,12 +108,11 @@ public class SmoothedFloat implements FloatSupplier {
 		// 𝚫t
 		float lastFrameTime = SystemTimeUniforms.TIMER.getLastFrameTime();
 
-		// Compute the smoothing factor based on our
-		// α = 1 - e^(-𝚫t/τ) = 1 - e^(-k𝚫t)
-		float smoothingFactor = 1.0f - exponentialDecayFactor(newValue > this.accumulator ? this.decayConstantUp : decayConstantDown, lastFrameTime);
-
-		// sₜ = αxₜ + (1 - α)sₜ₋₁
-		accumulator = lerp(accumulator, newValue, smoothingFactor);
+		// α = 1 - e^(-k𝚫t), sₜ = αxₜ + (1 - α)sₜ₋₁
+		// Visus V-02: SafeSmoothing computes the same value bit for bit, but a NaN or Inf in the sample, the
+		// accumulator, the decay constant or 𝚫t can no longer latch NaN into the uniform (black or blown-out screen).
+		float decay = newValue > this.accumulator ? this.decayConstantUp : decayConstantDown;
+		accumulator = SafeSmoothing.step(accumulator, newValue, decay, lastFrameTime);
 	}
 
 	private float computeDecay(float halfLife) {

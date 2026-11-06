@@ -10,6 +10,7 @@ import net.irisshaders.iris.layer.IsOutlineRenderStateShard;
 import net.irisshaders.iris.layer.OuterWrappedRenderType;
 import net.irisshaders.iris.pathways.HandRenderer;
 import net.irisshaders.iris.pipeline.WorldRenderingPhase;
+import net.irisshaders.iris.pipeline.NoOpPipeline;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
 import net.irisshaders.iris.shadows.frustum.fallback.NonCullingFrustum;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
@@ -44,8 +45,13 @@ public class MixinLevelRenderer {
 	@Final
 	private Minecraft minecraft;
 
+	// Visus V-05: never null. It holds the frame's pipeline inside renderLevel and NoOpPipeline outside it, so hooks such
+	// as renderSky or renderClouds called outside renderLevel do nothing instead of throwing (Iris #2560).
 	@Unique
-	private WorldRenderingPipeline pipeline;
+	private WorldRenderingPipeline pipeline = NoOpPipeline.INSTANCE;
+
+	@Unique
+	private int visus$pipelineGeneration;
 
 	@Shadow
 	private RenderBuffers renderBuffers;
@@ -58,6 +64,20 @@ public class MixinLevelRenderer {
 
 	@Shadow
 	private @Nullable ClientLevel level;
+
+	/**
+	 * Visus V-05: the pipeline for this frame. If the pipeline was destroyed during this frame, for example by a
+	 * dimension change, this returns NoOpPipeline instead of the destroyed one, so no GL resource that was already
+	 * deleted is used.
+	 */
+	@Unique
+	private WorldRenderingPipeline visus$pipeline() {
+		if (visus$pipelineGeneration != Iris.getPipelineManager().getVersionCounterForSodiumShaderReload()) {
+			return NoOpPipeline.INSTANCE;
+		}
+
+		return pipeline;
+	}
 
 	// Begin shader rendering after buffers have been cleared.
 	// At this point we've ensured that Minecraft's main framebuffer is cleared.
@@ -79,12 +99,14 @@ public class MixinLevelRenderer {
 		SystemTimeUniforms.TIMER.beginFrame(startTime);
 
 		pipeline = Iris.getPipelineManager().preparePipeline(Iris.getCurrentDimension());
+		visus$pipelineGeneration = Iris.getPipelineManager().getVersionCounterForSodiumShaderReload();
+		Iris.getPipelineManager().onLevelRenderStart();
 
-		if (pipeline.shouldDisableFrustumCulling()) {
+		if (visus$pipeline().shouldDisableFrustumCulling()) {
 			this.cullingFrustum = new NonCullingFrustum();
 		}
 
-		Minecraft.getInstance().smartCull = !pipeline.shouldDisableOcclusionCulling();
+		Minecraft.getInstance().smartCull = !visus$pipeline().shouldDisableOcclusionCulling();
 
 		if (Iris.shouldActivateWireframe() && this.minecraft.isLocalServer()) {
 			IrisRenderSystem.setPolygonMode(GL43C.GL_LINE);
@@ -99,8 +121,8 @@ public class MixinLevelRenderer {
 	private void iris$beginLevelRender(PoseStack poseStack, float tickDelta, long startTime, boolean renderBlockOutline,
 									   Camera camera, GameRenderer gameRenderer, LightTexture lightTexture,
 									   Matrix4f projection, CallbackInfo callback) {
-		pipeline.beginLevelRendering();
-		pipeline.setPhase(WorldRenderingPhase.NONE);
+		visus$pipeline().beginLevelRendering();
+		visus$pipeline().setPhase(WorldRenderingPhase.NONE);
 	}
 
 
@@ -108,10 +130,11 @@ public class MixinLevelRenderer {
 	// render their waypoint beams.
 	@Inject(method = RENDER, at = @At(value = "RETURN", shift = At.Shift.BEFORE))
 	private void iris$endLevelRender(PoseStack poseStack, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f projectionMatrix, CallbackInfo callback) {
-		HandRenderer.INSTANCE.renderTranslucent(poseStack, tickDelta, camera, gameRenderer, pipeline);
+		HandRenderer.INSTANCE.renderTranslucent(poseStack, tickDelta, camera, gameRenderer, visus$pipeline());
 		Minecraft.getInstance().getProfiler().popPush("iris_final");
-		pipeline.finalizeLevelRendering();
-		pipeline = null;
+		visus$pipeline().finalizeLevelRendering();
+		pipeline = NoOpPipeline.INSTANCE;
+		Iris.getPipelineManager().onLevelRenderEnd();
 
 		if (Iris.shouldActivateWireframe() && this.minecraft.isLocalServer()) {
 			IrisRenderSystem.setPolygonMode(GL43C.GL_FILL);
@@ -124,7 +147,7 @@ public class MixinLevelRenderer {
 	// Do this before sky rendering so it's ready before the sky render starts.
 	@Inject(method = RENDER, at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;renderSky(Lcom/mojang/blaze3d/vertex/PoseStack;Lorg/joml/Matrix4f;FLnet/minecraft/client/Camera;ZLjava/lang/Runnable;)V"))
 	private void iris$renderTerrainShadows(PoseStack poseStack, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f projectionMatrix, CallbackInfo callback) {
-		pipeline.renderShadows((LevelRendererAccessor) this, camera);
+		visus$pipeline().renderShadows((LevelRendererAccessor) this, camera);
 	}
 
 	@ModifyVariable(method = "renderSky", at = @At(value = "HEAD"), index = 5, argsOnly = true)
@@ -135,7 +158,7 @@ public class MixinLevelRenderer {
 	@Inject(method = "renderLevel", at = @At(value = "INVOKE", target = RENDER_SKY))
 	private void iris$beginSky(PoseStack poseStack, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f projection, CallbackInfo callback) {
 		// Use CUSTOM_SKY until levelFogColor is called as a heuristic to catch FabricSkyboxes.
-		pipeline.setPhase(WorldRenderingPhase.CUSTOM_SKY);
+		visus$pipeline().setPhase(WorldRenderingPhase.CUSTOM_SKY);
 
 		// We've changed the phase, but vanilla doesn't update the shader program at this point before rendering stuff,
 		// so we need to manually refresh the shader program so that the correct shader override gets applied.
@@ -148,73 +171,73 @@ public class MixinLevelRenderer {
 	private void iris$renderSky$beginNormalSky(PoseStack poseStack, Matrix4f projectionMatrix, float f, Camera camera, boolean bl, Runnable runnable, CallbackInfo ci) {
 		// None of the vanilla sky is rendered until after this call, so if anything is rendered before, it's
 		// CUSTOM_SKY.
-		pipeline.setPhase(WorldRenderingPhase.SKY);
+		visus$pipeline().setPhase(WorldRenderingPhase.SKY);
 	}
 
 	@Inject(method = "renderSky", at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/LevelRenderer;SUN_LOCATION:Lnet/minecraft/resources/ResourceLocation;"))
 	private void iris$setSunRenderStage(PoseStack poseStack, Matrix4f projectionMatrix, float f, Camera camera, boolean bl, Runnable runnable, CallbackInfo ci) {
-		pipeline.setPhase(WorldRenderingPhase.SUN);
+		visus$pipeline().setPhase(WorldRenderingPhase.SUN);
 	}
 
 	@Inject(method = "renderSky", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/DimensionSpecialEffects;getSunriseColor(FF)[F"))
 	private void iris$setSunsetRenderStage(PoseStack poseStack, Matrix4f projectionMatrix, float f, Camera camera, boolean bl, Runnable runnable, CallbackInfo ci) {
-		pipeline.setPhase(WorldRenderingPhase.SUNSET);
+		visus$pipeline().setPhase(WorldRenderingPhase.SUNSET);
 	}
 
 	@Inject(method = "renderSky", at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/LevelRenderer;MOON_LOCATION:Lnet/minecraft/resources/ResourceLocation;"))
 	private void iris$setMoonRenderStage(PoseStack poseStack, Matrix4f projectionMatrix, float f, Camera camera, boolean bl, Runnable runnable, CallbackInfo ci) {
-		pipeline.setPhase(WorldRenderingPhase.MOON);
+		visus$pipeline().setPhase(WorldRenderingPhase.MOON);
 	}
 
 	@Inject(method = "renderSky", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/ClientLevel;getStarBrightness(F)F"))
 	private void iris$setStarRenderStage(PoseStack poseStack, Matrix4f projectionMatrix, float f, Camera camera, boolean bl, Runnable runnable, CallbackInfo ci) {
-		pipeline.setPhase(WorldRenderingPhase.STARS);
+		visus$pipeline().setPhase(WorldRenderingPhase.STARS);
 	}
 
 	@Inject(method = "renderSky", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;getEyePosition(F)Lnet/minecraft/world/phys/Vec3;"))
 	private void iris$setVoidRenderStage(PoseStack poseStack, Matrix4f projectionMatrix, float f, Camera camera, boolean bl, Runnable runnable, CallbackInfo ci) {
-		pipeline.setPhase(WorldRenderingPhase.VOID);
+		visus$pipeline().setPhase(WorldRenderingPhase.VOID);
 	}
 
 	@Inject(method = "renderSky", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/ClientLevel;getTimeOfDay(F)F"),
 		slice = @Slice(from = @At(value = "FIELD", target = "Lcom/mojang/math/Axis;YP:Lcom/mojang/math/Axis;")))
 	private void iris$renderSky$tiltSun(PoseStack poseStack, Matrix4f projectionMatrix, float f, Camera camera, boolean bl, Runnable runnable, CallbackInfo ci) {
-		poseStack.mulPose(Axis.ZP.rotationDegrees(pipeline.getSunPathRotation()));
+		poseStack.mulPose(Axis.ZP.rotationDegrees(visus$pipeline().getSunPathRotation()));
 	}
 
 	@Inject(method = "renderLevel", at = @At(value = "INVOKE", target = RENDER_SKY, shift = At.Shift.AFTER))
 	private void iris$endSky(PoseStack poseStack, float f, long l, boolean bl, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f projection, CallbackInfo ci) {
-		pipeline.setPhase(WorldRenderingPhase.NONE);
+		visus$pipeline().setPhase(WorldRenderingPhase.NONE);
 	}
 
 	@Inject(method = RENDER_CLOUDS, at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/DimensionSpecialEffects;renderClouds(Lnet/minecraft/client/multiplayer/ClientLevel;IFLcom/mojang/blaze3d/vertex/PoseStack;DDDLorg/joml/Matrix4f;)Z", shift = At.Shift.AFTER))
 	private void iris$beginClouds(PoseStack poseStack, Matrix4f projection, float tickDelta, double x, double y, double z, CallbackInfo ci) {
-		pipeline.setPhase(WorldRenderingPhase.CLOUDS);
+		visus$pipeline().setPhase(WorldRenderingPhase.CLOUDS);
 	}
 
 	@Inject(method = RENDER_CLOUDS, at = @At("RETURN"))
 	private void iris$endClouds(PoseStack poseStack, Matrix4f projection, float tickDelta, double x, double y, double z, CallbackInfo ci) {
-		pipeline.setPhase(WorldRenderingPhase.NONE);
+		visus$pipeline().setPhase(WorldRenderingPhase.NONE);
 	}
 
 	@Inject(method = "renderChunkLayer", at = @At("HEAD"))
 	private void iris$beginTerrainLayer(RenderType renderType, PoseStack poseStack, double d, double e, double f, Matrix4f projectionMatrix, CallbackInfo ci) {
-		pipeline.setPhase(WorldRenderingPhase.fromTerrainRenderType(renderType));
+		visus$pipeline().setPhase(WorldRenderingPhase.fromTerrainRenderType(renderType));
 	}
 
 	@Inject(method = "renderChunkLayer", at = @At("RETURN"))
 	private void iris$endTerrainLayer(RenderType renderType, PoseStack poseStack, double d, double e, double f, Matrix4f projectionMatrix, CallbackInfo ci) {
-		pipeline.setPhase(WorldRenderingPhase.NONE);
+		visus$pipeline().setPhase(WorldRenderingPhase.NONE);
 	}
 
 	@Inject(method = RENDER_WEATHER, at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/DimensionSpecialEffects;renderSnowAndRain(Lnet/minecraft/client/multiplayer/ClientLevel;IFLnet/minecraft/client/renderer/LightTexture;DDD)Z", shift = At.Shift.AFTER))
 	private void iris$beginWeather(LightTexture arg, float tickDelta, double x, double y, double z, CallbackInfo callback) {
-		pipeline.setPhase(WorldRenderingPhase.RAIN_SNOW);
+		visus$pipeline().setPhase(WorldRenderingPhase.RAIN_SNOW);
 	}
 
 	@ModifyArg(method = RENDER_WEATHER, at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;depthMask(Z)V", ordinal = 0, remap = false))
 	private boolean iris$writeRainAndSnowToDepthBuffer(boolean depthMaskEnabled) {
-		if (pipeline.shouldWriteRainAndSnowToDepthBuffer()) {
+		if (visus$pipeline().shouldWriteRainAndSnowToDepthBuffer()) {
 			return true;
 		}
 
@@ -223,27 +246,27 @@ public class MixinLevelRenderer {
 
 	@Inject(method = RENDER_WEATHER, at = @At("RETURN"))
 	private void iris$endWeather(LightTexture arg, float tickDelta, double x, double y, double z, CallbackInfo callback) {
-		pipeline.setPhase(WorldRenderingPhase.NONE);
+		visus$pipeline().setPhase(WorldRenderingPhase.NONE);
 	}
 
 	@Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;renderWorldBorder(Lnet/minecraft/client/Camera;)V"))
 	private void iris$beginWorldBorder(PoseStack poseStack, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f projection, CallbackInfo callback) {
-		pipeline.setPhase(WorldRenderingPhase.WORLD_BORDER);
+		visus$pipeline().setPhase(WorldRenderingPhase.WORLD_BORDER);
 	}
 
 	@Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;renderWorldBorder(Lnet/minecraft/client/Camera;)V", shift = At.Shift.AFTER))
 	private void iris$endWorldBorder(PoseStack poseStack, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f projection, CallbackInfo callback) {
-		pipeline.setPhase(WorldRenderingPhase.NONE);
+		visus$pipeline().setPhase(WorldRenderingPhase.NONE);
 	}
 
 	@Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/debug/DebugRenderer;render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;DDD)V"))
 	private void iris$setDebugRenderStage(PoseStack poseStack, float f, long l, boolean bl, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f projectionMatrix, CallbackInfo ci) {
-		pipeline.setPhase(WorldRenderingPhase.DEBUG);
+		visus$pipeline().setPhase(WorldRenderingPhase.DEBUG);
 	}
 
 	@Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/debug/DebugRenderer;render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;DDD)V", shift = At.Shift.AFTER))
 	private void iris$resetDebugRenderStage(PoseStack poseStack, float f, long l, boolean bl, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f projectionMatrix, CallbackInfo ci) {
-		pipeline.setPhase(WorldRenderingPhase.NONE);
+		visus$pipeline().setPhase(WorldRenderingPhase.NONE);
 	}
 
 	@ModifyArg(method = "renderLevel",
@@ -261,9 +284,9 @@ public class MixinLevelRenderer {
 										boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer,
 										LightTexture lightTexture, Matrix4f projection,
 										CallbackInfo ci) {
-		pipeline.beginHand();
-		HandRenderer.INSTANCE.renderSolid(poseStack, tickDelta, camera, gameRenderer, pipeline);
+		visus$pipeline().beginHand();
+		HandRenderer.INSTANCE.renderSolid(poseStack, tickDelta, camera, gameRenderer, visus$pipeline());
 		Minecraft.getInstance().getProfiler().popPush("iris_pre_translucent");
-		pipeline.beginTranslucents();
+		visus$pipeline().beginTranslucents();
 	}
 }

@@ -50,6 +50,8 @@ public class MixinLevelRenderer {
 
 		if (provider instanceof Groupable) {
 			groupable = (Groupable) provider;
+			// Visus V-01: no entity group can be open at frame start; close any a failed renderer left behind.
+			groupable.resetGroupState();
 		}
 	}
 

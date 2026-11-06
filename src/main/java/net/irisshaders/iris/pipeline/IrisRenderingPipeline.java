@@ -207,7 +207,8 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 
 		RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
 		int depthTextureId = main.getDepthTextureId();
-		int internalFormat = TextureInfoCache.INSTANCE.getInfo(depthTextureId).getInternalFormat();
+		// Visus V-06: the real sized format, so depthtex1/depthtex2 are allocated to match the main depth buffer.
+		int internalFormat = TextureInfoCache.INSTANCE.getInfo(depthTextureId).getSizedDepthFormat();
 		DepthBufferFormat depthBufferFormat = DepthBufferFormat.fromGlEnumOrDefault(internalFormat);
 
 		if (!programSet.getPackDirectives().getBufferObjects().isEmpty()) {
@@ -906,7 +907,8 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 		RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
 
 		int depthTextureId = main.getDepthTextureId();
-		int internalFormat = TextureInfoCache.INSTANCE.getInfo(depthTextureId).getInternalFormat();
+		// Visus V-06: the real sized format, so depthtex1/depthtex2 are allocated to match the main depth buffer.
+		int internalFormat = TextureInfoCache.INSTANCE.getInfo(depthTextureId).getSizedDepthFormat();
 		DepthBufferFormat depthBufferFormat = DepthBufferFormat.fromGlEnumOrDefault(internalFormat);
 
 		boolean changed = renderTargets.resizeIfNeeded(((Blaze3dRenderTargetExt) main).iris$getDepthBufferVersion(), depthTextureId, main.width,

@@ -1,5 +1,6 @@
 package net.irisshaders.iris;
 
+import net.minecraft.client.gui.components.toasts.SystemToast;
 import com.google.common.base.Throwables;
 import com.mojang.blaze3d.platform.GlDebug;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -108,6 +109,8 @@ public class Iris {
 	private static boolean fallback;
 	private static boolean loadPackWhenPossible = false;
 	private static boolean renderSystemInit = false;
+	// Visus V-05: a reload requested while a level was being rendered, waiting for the frame boundary.
+	private static boolean reloadDeferred = false;
 
 	public Iris() {
 		try {
@@ -560,6 +563,36 @@ public class Iris {
 	}
 
 	public static void reload() throws IOException {
+		// Visus V-05: destroying the pipeline in the middle of renderLevel leaves the rest of the frame running on deleted
+		// GL resources (and is how NeoVoxy #30 re-entered the pipeline constructor). Run the reload at the next frame
+		// boundary instead, through the main-thread task queue, which runs before the next frame starts.
+		if (pipelineManager != null && pipelineManager.isRenderingLevel()) {
+			if (!reloadDeferred) {
+				reloadDeferred = true;
+				logger.info("Shader reload requested during level rendering; deferring it to the end of the frame.");
+				Minecraft.getInstance().tell(Iris::runDeferredReload);
+			}
+
+			return;
+		}
+
+		reloadNow();
+	}
+
+	private static void runDeferredReload() {
+		reloadDeferred = false;
+		// The task queue runs between frames, so no level render can be in progress. This also clears a count left
+		// behind by a renderLevel call that threw.
+		getPipelineManager().clearLevelRenderState();
+
+		try {
+			reloadNow();
+		} catch (IOException e) {
+			logger.error("Error while reloading Shaders for " + MODNAME + "!", e);
+		}
+	}
+
+	private static void reloadNow() throws IOException {
 		// allows shaderpacks to be changed at runtime
 		irisConfig.initialize();
 
@@ -633,6 +666,10 @@ public class Iris {
 				}
 			}
 			logger.error("Failed to create shader rendering pipeline, disabling shaders!", e);
+			// Visus L8: a toast as well as the chat line, so the fallback to vanilla rendering is noticed even on a
+			// screen with no chat (for example while joining a world).
+			Minecraft.getInstance().getToasts().addToast(SystemToast.multiline(Minecraft.getInstance(), SystemToast.SystemToastIds.PACK_LOAD_FAILURE,
+				Component.literal(MODNAME), Component.translatable(e instanceof ShaderCompileException ? "iris.load.failure.shader" : "iris.load.failure.generic")));
 			// TODO: This should be reverted if a dimension change causes shaders to compile again
 			fallback = true;
 

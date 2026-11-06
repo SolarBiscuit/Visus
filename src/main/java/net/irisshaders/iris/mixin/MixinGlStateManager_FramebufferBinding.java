@@ -1,66 +1,34 @@
 package net.irisshaders.iris.mixin;
 
-import com.mojang.blaze3d.platform.GlConst;
 import com.mojang.blaze3d.platform.GlStateManager;
-import org.lwjgl.opengl.GL30C;
+import dev.visus.gl.BindTracker;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * A simple optimization to avoid redundant glBindFramebuffer calls, works in principle the same as things like
- * glBindTexture in GlStateManager.
+ * Records framebuffer and program binds made through {@link GlStateManager} in {@link BindTracker}.
+ *
+ * <p>Visus V-14: Oculus used this mixin to cancel binds it believed were redundant. Its framebuffer check compared
+ * against the bind target rather than the framebuffer, so it almost never fired. Its program check did fire, and it
+ * went stale whenever a mod bound programs through raw GL (Xenon/Embeddium's {@code GlProgram.bind()} does), leaving
+ * the wrong program bound. Mods such as Atmospherics carried workarounds for it. Visus no longer cancels any bind.
  */
 @Mixin(value = GlStateManager.class, remap = false)
 public class MixinGlStateManager_FramebufferBinding {
-	private static int iris$drawFramebuffer = 0;
-	private static int iris$readFramebuffer = 0;
-	private static int iris$program = 0;
-
-	@Inject(method = "_glBindFramebuffer(II)V", at = @At("HEAD"), cancellable = true)
-	private static void iris$avoidRedundantBind(int target, int framebuffer, CallbackInfo ci) {
-		if (target == GlConst.GL_FRAMEBUFFER) {
-			if (iris$drawFramebuffer == target && iris$readFramebuffer == target) {
-				ci.cancel();
-			} else {
-				iris$drawFramebuffer = framebuffer;
-				iris$readFramebuffer = framebuffer;
-			}
-		} else if (target == GL30C.GL_DRAW_FRAMEBUFFER) {
-			if (iris$drawFramebuffer == target) {
-				ci.cancel();
-			} else {
-				iris$drawFramebuffer = framebuffer;
-			}
-		} else if (target == GL30C.GL_READ_FRAMEBUFFER) {
-			if (iris$readFramebuffer == target) {
-				ci.cancel();
-			} else {
-				iris$readFramebuffer = framebuffer;
-			}
-		} else {
-			throw new IllegalStateException("Invalid framebuffer target: " + target);
-		}
+	@Inject(method = "_glBindFramebuffer(II)V", at = @At("HEAD"))
+	private static void iris$trackFramebufferBind(int target, int framebuffer, CallbackInfo ci) {
+		BindTracker.onBindFramebuffer(target, framebuffer);
 	}
 
-	@Inject(method = "_glUseProgram", at = @At("HEAD"), cancellable = true, remap = false)
-	private static void iris$avoidRedundantBind2(int pInt0, CallbackInfo ci) {
-		if (iris$program == pInt0) {
-			ci.cancel();
-		} else {
-			iris$program = pInt0;
-		}
+	@Inject(method = "_glUseProgram", at = @At("HEAD"), remap = false)
+	private static void iris$trackProgramBind(int program, CallbackInfo ci) {
+		BindTracker.onUseProgram(program);
 	}
 
 	@Inject(method = "_glDeleteFramebuffers(I)V", at = @At("HEAD"), remap = false)
 	private static void iris$trackFramebufferDelete(int framebuffer, CallbackInfo ci) {
-		if (iris$drawFramebuffer == framebuffer) {
-			iris$drawFramebuffer = 0;
-		}
-
-		if (iris$readFramebuffer == framebuffer) {
-			iris$readFramebuffer = 0;
-		}
+		BindTracker.onDeleteFramebuffer(framebuffer);
 	}
 }

@@ -233,7 +233,11 @@ public abstract class NormalHelper {
 		float tangentx = f * (deltaV2 * edge1x - deltaV1 * edge2x);
 		float tangenty = f * (deltaV2 * edge1y - deltaV1 * edge2y);
 		float tangentz = f * (deltaV2 * edge1z - deltaV1 * edge2z);
-		float tcoeff = rsqrt(tangentx * tangentx + tangenty * tangenty + tangentz * tangentz);
+		float tangentLengthSq = tangentx * tangentx + tangenty * tangenty + tangentz * tangentz;
+		if (isDegenerateTangent(tangentLengthSq)) {
+			return fallbackTangent(normalX, normalY, normalZ);
+		}
+		float tcoeff = rsqrt(tangentLengthSq);
 		tangentx *= tcoeff;
 		tangenty *= tcoeff;
 		tangentz *= tcoeff;
@@ -320,7 +324,11 @@ public abstract class NormalHelper {
 		float tangentx = f * (deltaV2 * edge1x - deltaV1 * edge2x);
 		float tangenty = f * (deltaV2 * edge1y - deltaV1 * edge2y);
 		float tangentz = f * (deltaV2 * edge1z - deltaV1 * edge2z);
-		float tcoeff = rsqrt(tangentx * tangentx + tangenty * tangenty + tangentz * tangentz);
+		float tangentLengthSq = tangentx * tangentx + tangenty * tangenty + tangentz * tangentz;
+		if (isDegenerateTangent(tangentLengthSq)) {
+			return fallbackTangent(normalX, normalY, normalZ);
+		}
+		float tcoeff = rsqrt(tangentLengthSq);
 		tangentx *= tcoeff;
 		tangenty *= tcoeff;
 		tangentz *= tcoeff;
@@ -387,7 +395,11 @@ public abstract class NormalHelper {
 		float tangentx = f * (deltaV2 * edge1x - deltaV1 * edge2x);
 		float tangenty = f * (deltaV2 * edge1y - deltaV1 * edge2y);
 		float tangentz = f * (deltaV2 * edge1z - deltaV1 * edge2z);
-		float tcoeff = rsqrt(tangentx * tangentx + tangenty * tangenty + tangentz * tangentz);
+		float tangentLengthSq = tangentx * tangentx + tangenty * tangenty + tangentz * tangentz;
+		if (isDegenerateTangent(tangentLengthSq)) {
+			return fallbackTangent(normalX, normalY, normalZ);
+		}
+		float tcoeff = rsqrt(tangentLengthSq);
 		tangentx *= tcoeff;
 		tangenty *= tcoeff;
 		tangentz *= tcoeff;
@@ -424,6 +436,42 @@ public abstract class NormalHelper {
 		}
 
 		return NormI8.pack(tangentx, tangenty, tangentz, tangentW);
+	}
+
+	/**
+	 * Visus V-03: true when the UV-derived tangent cannot be normalised: zero (degenerate, collinear or single-texel
+	 * UVs), Inf (a near-zero UV determinant) or NaN. Oculus packed these as a zero tangent, and
+	 * {@code normalize(at_tangent.xyz)} in the pack then produced NaN, which TAA and bloom smear across the screen.
+	 * Every other tangent is computed exactly as before.
+	 */
+	private static boolean isDegenerateTangent(float lengthSq) {
+		return !(lengthSq > 0.0f) || lengthSq == Float.POSITIVE_INFINITY;
+	}
+
+	/**
+	 * Visus V-03: a unit tangent perpendicular to the normal, from Frisvad's orthonormal basis ("Building an
+	 * Orthonormal Basis from a 3D Unit Vector Without Normalization", 2012). Handedness is +1. A zero or non-finite
+	 * normal gives +X.
+	 */
+	public static int fallbackTangent(float normalX, float normalY, float normalZ) {
+		float lengthSq = normalX * normalX + normalY * normalY + normalZ * normalZ;
+
+		if (!(lengthSq > 1.0e-12f) || !Float.isFinite(lengthSq)) {
+			return NormI8.pack(1.0f, 0.0f, 0.0f, 1.0f);
+		}
+
+		float inv = (float) (1.0 / Math.sqrt(lengthSq));
+		float nx = normalX * inv;
+		float ny = normalY * inv;
+		float nz = normalZ * inv;
+
+		if (nz < -0.9999999f) {
+			return NormI8.pack(0.0f, -1.0f, 0.0f, 1.0f);
+		}
+
+		float a = 1.0f / (1.0f + nz);
+		float b = -nx * ny * a;
+		return NormI8.pack(1.0f - nx * nx * a, b, -nx, 1.0f);
 	}
 
 	private static float rsqrt(float value) {

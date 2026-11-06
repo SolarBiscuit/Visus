@@ -1,5 +1,7 @@
 package net.irisshaders.iris.texture;
 
+import dev.visus.gl.DepthFormats;
+import org.lwjgl.opengl.GL30C;
 import com.mojang.blaze3d.platform.GlStateManager;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -32,6 +34,7 @@ public class TextureInfoCache {
 			int id = GlStateManagerAccessor.getTEXTURES()[GlStateManagerAccessor.getActiveTexture()].binding;
 			TextureInfo info = getInfo(id);
 			info.internalFormat = internalformat;
+			info.sizedDepthFormat = -1;
 			info.width = width;
 			info.height = height;
 		}
@@ -44,6 +47,7 @@ public class TextureInfoCache {
 	public static class TextureInfo {
 		private final int id;
 		private int internalFormat = -1;
+		private int sizedDepthFormat = -1;
 		private int width = -1;
 		private int height = -1;
 
@@ -60,6 +64,28 @@ public class TextureInfoCache {
 				internalFormat = fetchLevelParameter(GL20C.GL_TEXTURE_INTERNAL_FORMAT);
 			}
 			return internalFormat;
+		}
+
+		/**
+		 * Visus V-06: the sized depth format the driver actually allocated. For an unsized request such as vanilla's
+		 * {@code GL_DEPTH_COMPONENT}, it is read back from the depth and stencil bit counts. Copies of the depth
+		 * buffer allocated in this format always match it, so {@code glCopyImageSubData} and depth blits are valid.
+		 * Falls back to {@link #getInternalFormat()} if the bits do not name a standard format.
+		 */
+		public int getSizedDepthFormat() {
+			if (sizedDepthFormat == -1) {
+				int requested = getInternalFormat();
+
+				if (DepthFormats.isSized(requested)) {
+					sizedDepthFormat = requested;
+				} else {
+					int sized = DepthFormats.fromBits(fetchLevelParameter(GL30C.GL_TEXTURE_DEPTH_SIZE),
+						fetchLevelParameter(GL30C.GL_TEXTURE_DEPTH_TYPE), fetchLevelParameter(GL30C.GL_TEXTURE_STENCIL_SIZE));
+					sizedDepthFormat = sized != -1 ? sized : requested;
+				}
+			}
+
+			return sizedDepthFormat;
 		}
 
 		public int getWidth() {

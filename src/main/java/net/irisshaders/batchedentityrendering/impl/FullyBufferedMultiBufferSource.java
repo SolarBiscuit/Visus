@@ -254,6 +254,11 @@ public class FullyBufferedMultiBufferSource extends MultiBufferSource.BufferSour
 	}
 
 	@Override
+	public void resetGroupState() {
+		renderOrderManager.resetGroupState();
+	}
+
+	@Override
 	public void pushWrappingFunction(Function<RenderType, RenderType> wrappingFunction) {
 		if (this.wrappingFunction != null) {
 			this.wrappingFunctionStack.add(this.wrappingFunction);
@@ -318,6 +323,11 @@ public class FullyBufferedMultiBufferSource extends MultiBufferSource.BufferSour
 		@Override
 		public void endGroup() {
 			wrapped.endGroup();
+		}
+
+		@Override
+		public void resetGroupState() {
+			wrapped.resetGroupState();
 		}
 	}
 }
