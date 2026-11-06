@@ -1,24 +1,53 @@
 modLoader="javafml"
 loaderVersion="*"
-issueTrackerURL="https://github.com/Asek3/Oculus/issues"
-license="LGPL-3.0-only"
+issueTrackerURL="https://github.com/SolarBiscuit/Visus/issues"
+license="AGPL-3.0-only"
+
+# Visus ships two mod entries. "visus" is the real mod and carries the real version.
+# "oculus" is a compatibility alias: mods check ModList.isLoaded("oculus") / LoadingModList, and declare
+# dependencies like oculus [1.8.0,) or [1.7.0,). Until 0.3.0 the alias is exactly 1.8.0, so add-ons pinned to 1.8.0
+# (RatOptimization's oculus_shaders module) keep patching the unchanged internals; from 0.3.0 it moves to 1.8.100 and
+# those add-ons switch off because Visus takes over their work.
+# The "oculus" entry must stay FIRST: FML's ModFileInfo.versionString() (used by ImmediatelyFast, RatOptimization and
+# others through LoadingModList) returns the first entry's version, which must read as the 1.8.x alias, not 0.1.0.
+# See docs/VISUS-ARCHITECTURE.md A§4.1.
 
 [[mods]]
 modId="oculus"
-version="${version}"
-displayURL = "https://curseforge.com/minecraft/mc-mods/oculus"
-displayName="Oculus"
-logoFile="oculus-logo.png"
+version="${oculus_alias_version}"
+displayName="Visus (Oculus compatibility)"
+logoFile="visus-logo.png"
 authors="NanoLive, dima_dencep, coderbot, IMS212, Justsnoopy30, FoundationGames"
 description='''
-Unofficial Fork of "Iris", made to work with FML
+Compatibility alias provided by Visus so mods that look for Oculus keep working. Not a separate mod.
 '''
 provides = ["iris"]
+displayTest="IGNORE_ALL_VERSION"
 
+# Embeddium/Xenon reads these options from the entry they follow; keep them on the oculus entry as upstream does.
 [mods."sodium:options"]
 "mixin.features.render.world.sky"=false
 "mixin.features.render.entity"=false
 "mixin.features.render.gui.font"=false
+
+[[mods]]
+modId="visus"
+version="${version}"
+displayName="Visus"
+# Shown in the Forge mod list (a dark screen), so this is the light-on-dark variant.
+logoFile="visus-logo.png"
+authors="SolarBiscuit; based on Oculus (NanoLive, dima_dencep) and Iris (coderbot, IMS212, Justsnoopy30, FoundationGames)"
+description='''
+Shader pack loader for Forge 1.20.1. A drop-in replacement for Oculus (fork of Oculus 1.8.0, an unofficial Forge port of Iris).
+'''
+displayTest="IGNORE_ALL_VERSION"
+
+[[dependencies.visus]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1]"
+ordering = "NONE"
+side = "CLIENT"
 
 [[dependencies.oculus]]
 modId = "minecraft"

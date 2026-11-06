@@ -78,7 +78,7 @@ public class Iris {
 	 * easy branding changes (for forks). You'll still need to change this
 	 * separately in mixin plugin classes & the language files.
 	 */
-	public static final String MODNAME = "Oculus";
+	public static final String MODNAME = "Visus";
 	public static final IrisLogging logger = new IrisLogging(MODNAME);
 	private static final Map<String, String> shaderPackOptionQueue = new HashMap<>();
 	// Change this for snapshots!
@@ -114,7 +114,8 @@ public class Iris {
 			FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onKeyRegister);
 			MinecraftForge.EVENT_BUS.addListener(this::onKeyInput);
 
-			IRIS_VERSION = ModList.get().getModContainerById(MODID).get().getModInfo().getVersion().toString();
+			// Visus: report the real Visus version; the "oculus" container is a compatibility alias (see mods.toml)
+			IRIS_VERSION = ModList.get().getModContainerById(dev.visus.Visus.MODID).get().getModInfo().getVersion().toString();
 
 			ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, () -> new ConfigScreenHandler.ConfigScreenFactory((mc, screen) -> new ShaderPackScreen(screen)));
 			ModLoadingContext.get().registerExtensionPoint(IExtensionPoint.DisplayTest.class, () -> new IExtensionPoint.DisplayTest(() -> NetworkConstants.IGNORESERVERONLY, (a, b) -> true));

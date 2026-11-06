@@ -36,7 +36,7 @@ configurations {
 sourceCompatibility = JavaVersion.VERSION_17
 targetCompatibility = JavaVersion.VERSION_17
 
-archivesBaseName = "${project.archives_base_name}-mc${project.minecraft_version}"
+archivesBaseName = "${project.archives_base_name}-${project.minecraft_version}"
 version = project.mod_version
 group = project.maven_group
 
@@ -120,9 +120,10 @@ dependencies {
 
 processResources {
 	inputs.property "version", project.version
+	inputs.property "oculus_alias_version", project.oculus_alias_version
 
 	filesMatching("META-INF/mods.toml") {
-		expand "version": project.version
+		expand "version": project.version, "oculus_alias_version": project.oculus_alias_version
 	}
 }
 
@@ -148,6 +149,7 @@ remapJar {
 }
 
 jar {
+	from(files('LICENSE', 'COPYING.LESSER', 'COPYING.GPL-3.0', 'NOTICE')) { into 'META-INF/visus' }
 	from sourceSets.sodiumCompatibility.output
 	from sourceSets.vendored.output
 	from sourceSets.desktop.output
@@ -173,3 +175,40 @@ publishing {
 	repositories {
 	}
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Visus checks (docs/VISUS-ROADMAP.md, "Test tiers")
+
+def visusJavaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(17) }
+
+// T2: every member that RatPack dependents link against must still exist (abi/abi-freeze.txt, from tools/abi).
+tasks.register('abiCheck', Exec) {
+	group = 'verification'
+	description = 'Checks the remapped jar against abi/abi-freeze.txt'
+	dependsOn remapJar
+	inputs.file('abi/abi-freeze.txt')
+	inputs.file(remapJar.archiveFile)
+	outputs.file(layout.buildDirectory.file('reports/abi-check.txt'))
+	doFirst { layout.buildDirectory.dir('reports').get().asFile.mkdirs() }
+	executable = visusJavaLauncher.get().executablePath.asFile
+	args 'tools/abi/AbiCensus.java', 'check', 'abi/abi-freeze.txt', remapJar.archiveFile.get().asFile.absolutePath,
+			layout.buildDirectory.file('reports/abi-check.txt').get().asFile.absolutePath
+}
+
+// Never ship a Sodium terrain shader override: AtmospheraLib turns off all its terrain features when any
+// non-Embeddium jar contains it (docs/VISUS-ARCHITECTURE.md A§4.1).
+tasks.register('checkForbiddenResources') {
+	group = 'verification'
+	dependsOn remapJar
+	inputs.file(remapJar.archiveFile)
+	doLast {
+		def forbidden = ['assets/sodium/shaders/blocks/block_layer_opaque.vsh']
+		zipTree(remapJar.archiveFile).visit { d ->
+			if (forbidden.contains(d.relativePath.pathString)) {
+				throw new GradleException("Forbidden resource in jar: ${d.relativePath.pathString}")
+			}
+		}
+	}
+}
+
+tasks.named('check') { dependsOn 'checkForbiddenResources', 'abiCheck' }

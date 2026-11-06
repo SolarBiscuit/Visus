@@ -1,33 +1,89 @@
-# gradle
+# ---------------------------------------------------------------------------
+# Visus is a fork of Oculus 1.8.0. Only source, build scripts, licences and the
+# docs a contributor needs are committed. Everything below stays on disk only.
+# ---------------------------------------------------------------------------
 
+# gradle
 .gradle/
 build/
 out/
 classes/
+/glsl-relocated/build/
 
 # eclipse
-
 *.launch
+.settings/
+.classpath
+.project
 
 # idea
-
 .idea/
 *.iml
 *.ipr
 *.iws
 
 # vscode
-
-.settings/
 .vscode/
 bin/
-.classpath
-.project
 
-# macos
+# macos / windows
+.DS_Store
+Thumbs.db
+desktop.ini
 
-*.DS_Store
-
-# fabric
-
+# loom / forge dev run directory
 run/
+runs/
+
+# ---- Jars --------------------------------------------------------------------
+# No binaries in git: not our build output, not the reference jars, not downloaded
+# add-ons. The Gradle wrapper jar is the one exception.
+*.jar
+!/gradle/wrapper/gradle-wrapper.jar
+
+# ---- Reference material (comparison and golden references only) ---------------
+# The Oculus 1.8.0 jar and the add-on jars we compare against. Upstream owns these.
+/referencemods/
+
+# ---- Raw research (AI-generated; verdicts already live in VISUS-ARCHITECTURE.md Appendix A)
+/docs/OculusRewriteDocs/
+*.odt
+*.ods
+*.odp
+
+# ---- Logo workbench -----------------------------------------------------------
+# Keep only the chosen logo (concept 01) and the README art. The other seven
+# concepts, the contact sheet and their generator stay local.
+/docs/logo/*
+!/docs/logo/visus-logo-01-voxel-iris.svg
+!/docs/logo/visus-logo-01-voxel-iris-dark.svg
+!/docs/logo/visus-banner.png
+
+# ---- Test and bench output ----------------------------------------------------
+# Pack dumps contain third-party shader code and can be hundreds of MB. Only the
+# list of intended differences (golden/CHANGES.md) is committed.
+/golden/*/
+/patched_shaders/
+patched_shaders/
+/abi/selftest.txt
+abi/selftest.txt
+*.jfr
+*.hprof
+hs_err_pid*.log
+replay_pid*.log
+
+# ---- Logs, crash reports, scratch ---------------------------------------------
+logs/
+crash-reports/
+*.log
+*.tmp
+*.bak
+*.orig
+*.rej
+__pycache__/
+*.pyc
+
+# ---- Local tooling ------------------------------------------------------------
+/.claude/settings.local.json
+/.claude/worktrees/
+/.claude/scratch/

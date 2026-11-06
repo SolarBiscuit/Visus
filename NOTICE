@@ -1,0 +1,36 @@
+Visus
+=====
+Visus is a modified version of Oculus 1.8.0 (https://github.com/Asek3/Oculus, branch 1.20.1-new,
+commit 5751a2f6b, 2024-12-24), an unofficial Forge port of Iris (https://github.com/IrisShaders/Iris).
+
+Licence
+- The Visus mod, as a whole, is licensed under the GNU Affero General Public License v3.0 only
+  (AGPL-3.0-only, see LICENSE).
+- Files that come from Oculus and Iris stay available under their original licence, the GNU Lesser General
+  Public License v3.0 only (see COPYING.LESSER and COPYING.GPL-3.0). Visus conveys them as part of the AGPL
+  work, as LGPL-3.0 (by dropping its additional permissions, GPL-3.0 section 7) and GPL-3.0 section 13 allow.
+  This is needed because the bundled glsl-transformer library is AGPL-3.0.
+- The list of changes made to the Oculus sources, with dates, is in docs/CHANGES-FROM-OCULUS.md. The full
+  history is in git.
+
+Additional term (AGPL-3.0 section 7(b)), for the material written for Visus by SolarBiscuit
+- Copies and modified versions must keep this NOTICE file. Modified versions must also keep the attribution
+  "Based on Visus by SolarBiscuit" in their Appropriate Legal Notices: the mod-list description or credits
+  screen, and the project page or README.
+
+Original authors
+- Iris: coderbot, IMS212, Justsnoopy30, FoundationGames and contributors
+- Oculus: NanoLive, dima_dencep and contributors
+- Visus changes: SolarBiscuit
+
+Bundled third-party libraries (shipped inside the Visus jar)
+- glsl-transformer 2.0.0-pre13 by douira (https://github.com/IrisShaders/glsl-transformer), GNU Affero
+  General Public License v3.0. Relocated with the bundled ANTLR runtime. See docs/spikes/licences.md.
+- ANTLR 4 runtime 4.11.1 (BSD-3-Clause), relocated to oculus.org.antlr
+- Apache Commons Collections (tries only, Apache-2.0), relocated to oculus.org.apache.commons.collections4
+- JCPP 1.4.14 by Shevek / Anarres (Apache-2.0), jar-in-jar
+- Ithaka Digraph (de.odysseus.ithaka.digraph, Apache-2.0), vendored source
+- Stareval by Kroppeb (kroppeb.stareval), vendored source, part of Iris
+
+The visus-api module (when present) is written from scratch, contains no Oculus, Iris or glsl-transformer
+code, and is licensed under the MIT licence. Mods that use only visus-api are not bound by the AGPL.
