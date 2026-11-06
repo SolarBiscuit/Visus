@@ -39,7 +39,7 @@ Licence   Visus jar AGPL-3.0-only (glsl-transformer); Oculus/Iris files stay LGP
 | T2 ABI | `gradlew abiCheck` | no missing members | Haiku 5.5 |
 | T3 scenes | Prism `Visus - Test` + `..\[1.20.1] Atmosphera\tools\*_scene.txt` + `shot_diff.py` | diff under threshold or an expected-change note | Sonnet 5.5 |
 | T4 perf | clientbench, ≥ 3 alternating runs per side | changes ≥ 8–10 % only; regressions ≤ 3 % | Sonnet 5.5 |
-| T5 compat | A§9.2 scenario list in `Visus - Test` and `Visus - Common` | checklist green, no new ERROR lines | Sonnet 5.5 triage, Opus fixes |
+| T5 compat | A§9.2 scenario list in `Visus - Test` and `Visus - Common`. Scenarios 1, 5 and 9 and the nesting soak are automated on the clientbench instance: `python -I tools/t5/t5.py run <tag> --plan s5,s9,s1` (or `--plan soak --minutes 30`), with `--remove-mod`/`--add-mod` as for bench, then `analyze <tag> --ref <oculus tag>` | checklist green, no new ERROR lines | Sonnet 5.5 triage, Opus fixes |
 
 ### Runbook template for delegated test agents (paste as the prompt)
 ```
@@ -193,6 +193,7 @@ If a command fails to start, report the error and stop.
   - Flywheel programs get new goldens, listed in `golden/CHANGES.md`.
 - **Acceptance:**
   - T5 scenarios 3, 4 and 6 pass in `Visus - Test` (Vanillin) and `Visus - Common` (Create 6).
+  - V-18: no GL error 0x3F6 on pipeline destroy (dimension change, pack toggle) with the native backend; T5 s1/s9 debug log clean.
   - T4: cold apply on the 7900 XTX is no worse than RatOpt's numbers (66 programs in 0.5–8.0 s), and the terrain link wait drops from 172.6 ms average to ≤ 20 ms.
   - Shadow-pass entity CPU on MakeUp drops ≥ 20 % (from 0.54 ms).
 - **Delegation:** Opus does the Flywheel backend and the compile service. Sonnet does 3–7. Sonnet runs T4 and T5.
