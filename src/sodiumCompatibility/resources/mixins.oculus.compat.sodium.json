@@ -16,6 +16,7 @@
     "block_id.MixinChunkRenderRebuildTask",
     "block_id.MixinChunkVertexBufferBuilder",
     "clouds.MixinCloudRenderer",
+    "compile.MixinGlProgramBuilderTiming",
     "copyEntity.CuboidMixin",
     "copyEntity.ModelPartMixin",
     "copyEntity.cull.EntityRendererMixin",

@@ -31,6 +31,16 @@ The full history is in git: upstream commits, then Visus commits on top.
   - `NOTICE` rewritten.
 - **No code changes.**
 
+## 2026-11-07: Visus 0.4.0
+- New `dev.visus.compile` (`ShaderBuild`, `CompileContexts`) and `dev.visus.mixin.compile`, ported from
+  RatOptimization's `oculus_shaders` (MIT).
+- **`ShaderMap`** constructor: begins a build, warms up all programs (`ShaderBuild.warm`), builds them, ends the build.
+- **`IrisChunkProgramOverrides.createShaders`**: times the terrain build. New Sodium-compat mixin
+  `compile.MixinGlProgramBuilderTiming` times Embeddium/Xenon links.
+- **`Parameters`**: `type` is no longer part of `hashCode`/`equals` (it is set during the transform, so the transform
+  cache never hit); the separate-AO setting and debug options are captured and compared instead.
+- `oculus_alias_version` 1.8.0 to 1.8.100.
+
 ## 2026-11-06: Visus 0.3.0
 - New `dev.visus.flywheel` (irisflw 2.0.5, MIT; see `NOTICE`), with its mixin configs
   `mixins.visus.flywheel*.json` (applied only with Flywheel installed) and its shaders under

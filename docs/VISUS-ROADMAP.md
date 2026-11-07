@@ -9,7 +9,7 @@ Root      C:\Users\epici\Desktop\My Modding Development\Original Mods\Forge\[1.2
 Build     Architectury Loom 1.4 (as upstream Oculus), Forge 47.1.105 (neoforged maven), official mappings, Java 17
           JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-17.0.20.8-hotspot ; gradlew --no-daemon build (runs abiCheck)
 Commands  gradlew build | gradlew test | gradlew abiCheck | gradlew checkForbiddenResources
-Jar       build/libs/visus-1.20.1-<ver>.jar   mod ids: alias oculus (first; 1.8.0 until the compile service, then 1.8.100) + visus
+Jar       build/libs/visus-1.20.1-<ver>.jar   mod ids: alias oculus (first; 1.8.100 since 0.4.0) + visus
 T1 dump   bench.py run <tag> --shaders <pack.zip> --dump-shaders [...]; python -I tools/golden/diff_dumps.py <ref> <cand>
 Client    Prism "RatPack 2.9 - TestClient" (copy it to "Visus - Test" before swapping jars)
           prismlauncher.exe --launch "Visus - Test" --world VisusTest --offline VisusTester
@@ -178,6 +178,9 @@ If a command fails to start, report the error and stop.
      - In the shadow pass, bind the LUT, cull data and matrices.
      - Memoise uniform locations, including -1.
   2. **Compile service:**
+     - **Status (0.4.0):** RatOpt's design ported as `dev.visus.compile` (parallel links, compiler contexts,
+       per-driver self-check, driver file seeded from RatOpt's, transform-cache fix in source); alias 1.8.100. Build
+       times equal RatOpt's. Open: the terrain-program warm-up and the apply progress screen.
      - Port RatOpt's `parallel_contexts` / `parallel_link` design with its per-driver self-check.
      - Seed the quirks DB from `ratoptimization-oculus-driver.properties`.
      - Warm up every program, including the 5 terrain programs, with a progress screen on apply.

@@ -34,6 +34,8 @@ Bundled third-party libraries (shipped inside the Visus jar)
 - Iris Flywheel Compat (irisflw) 2.0.5 by Red Face (https://github.com/leon-o/iris-flw-compat), MIT licence,
   adapted as dev.visus.flywheel (Java sources and the assets/flywheel/flywheel/internal/iris_instancing shaders).
   Copyright (c) 2022 Red Face. The licence text is in META-INF/visus/irisflw-LICENSE.
+- RatOptimization's oculus_shaders module by SolarBiscuit, MIT licence, ported as dev.visus.compile (the compile
+  service) and dev.visus.mixin.compile. Copyright (c) 2026 SolarBiscuit.
 
 The visus-api module (when present) is written from scratch, contains no Oculus, Iris or glsl-transformer
 code, and is licensed under the MIT licence. Mods that use only visus-api are not bound by the AGPL.

@@ -300,13 +300,20 @@ public class IrisChunkProgramOverrides {
 	public void createShaders(SodiumTerrainPipeline pipeline, ChunkVertexType vertexType) {
 		if (pipeline != null) {
 			pipeline.patchShaders(vertexType);
-			for (IrisTerrainPass pass : IrisTerrainPass.values()) {
-				if (pass.isShadow() && !pipeline.hasShadowPass()) {
-					this.programs.put(pass, null);
-					continue;
-				}
+			// Visus compile service: time the terrain build for the summary line (no warm-up here yet; see
+			// dev.visus.compile.ShaderBuild).
+			dev.visus.compile.ShaderBuild.beginBuild("Visus terrain");
+			try {
+				for (IrisTerrainPass pass : IrisTerrainPass.values()) {
+					if (pass.isShadow() && !pipeline.hasShadowPass()) {
+						this.programs.put(pass, null);
+						continue;
+					}
 
-				this.programs.put(pass, createShader(pass, pipeline, vertexType));
+					this.programs.put(pass, createShader(pass, pipeline, vertexType));
+				}
+			} finally {
+				dev.visus.compile.ShaderBuild.endBuild();
 			}
 		} else {
 			for (GlProgram<?> program : this.programs.values()) {

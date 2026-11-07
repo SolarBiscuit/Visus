@@ -5,6 +5,38 @@ Versioning:
 - +0.1.0 when a change adds or removes 500+ lines (patch resets to 0).
 - 1.0.0 only when requested.
 
+## 0.4.0 (2026-11-07) "Absorb", part 2: compile service
+- **Shader pack loading is parallel, built in** (architecture §4.4, §5 L2). RatOptimization's `oculus_shaders`
+  module is now Visus's compile service (`dev.visus.compile`, MIT code by SolarBiscuit, see `NOTICE`):
+  - Before the pipeline builds its ~66 programs one by one, all of their links are warmed up at once, either on the
+    driver's own compiler threads (`compile.parallelLink`) or on hidden shared GL contexts
+    (`compile.parallelContexts`, 4 by default). The real build then finds them in the driver's cache.
+  - Each path checks itself per GPU driver and switches off where it does not help. The verdicts are kept in
+    `config/visus-driver.properties`, seeded from RatOptimization's driver file.
+  - Build summary lines (`[compile] Visus pipeline: ...`, `[compile] Visus terrain: ...`) and an optional per-link
+    log (`compile.linkLog`).
+  - Settings are in `visus.properties` (`compile.*`), copied once from `ratoptimization.toml`.
+- **Transform cache works.** Every transformed shader was cached under a key that included a field the transform sets
+  only afterwards, so lookups never hit and identical programs were transformed again (RatOpt's `transform_cache`
+  fix, now in Visus's source). The key also carries the two global settings the transform reads.
+- **The `oculus` alias is now 1.8.100.** RatOptimization's `oculus_shaders` switches itself off ("Oculus 1.8.100 is not
+  the checked 1.8.0"), since Visus does its job.
+- Version: this change adds about 1,400 lines, so it is 0.4.0 under the version rule. The roadmap's release numbers
+  shift by one from here.
+- **Measured** (clientbench, RatPack 2.9 TestClient, Photon, RX 7900 XTX; RatOpt numbers from earlier runs on the same
+  machine):
+  - Pipeline: 66 programs in 1.3 s at load, 0.9–1.1 s on reloads (RatOpt: 1.3 s). Link wait 0.0–0.5 ms average.
+  - Terrain: 5 programs in 116 ms, link wait 3.6 ms average, then 7–12 ms on reloads (RatOpt: 101 ms, 2.7 ms).
+    The roadmap's ≤ 20 ms terrain link-wait target is met without a terrain warm-up.
+  - T1: identical to 0.3.0 (Flywheel programs compare equal; irisflw names them by compile order).
+  - T5 scenarios 1, 5 and 9 against Oculus 1.8.0 + RatOpt: PASS, no new ERROR kinds, 0 GL debug messages.
+  - Same run, every pipeline build, against the Oculus + RatOpt reference run: first load 1.3 s on both; first load
+    of Complementary Unbound 2.4 s (RatOpt 2.3 s); option apply 1.1 s on both; terrain the same throughout. Warm
+    reloads after a K toggle took 0.59–0.63 s (RatOpt 0.36–0.57 s). One run per side with a different number of
+    rebuilds, so not a measured regression; recheck with repeated runs.
+- **Not in this release** (from the compile-service scope): warming up the 5 terrain programs and a progress screen
+  during apply.
+
 ## 0.3.0 (2026-11-06) "Absorb", part 1: Flywheel
 - **Oculus Flywheel Compat is built in** (architecture §4.6). Its code (irisflw 2.0.5, MIT, by Red Face) is now part of
   Visus as `dev.visus.flywheel`, with the MIT notice kept (`META-INF/visus/irisflw-LICENSE`, `NOTICE`).

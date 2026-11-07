@@ -4,6 +4,10 @@
   "package": "dev.visus.mixin",
   "compatibilityLevel": "JAVA_17",
   "client": [
+    "compile.ProgramIdAccessor",
+    "compile.ProgramManagerLinkMixin",
+    "compile.ShaderInstanceUniformsAccessor",
+    "compile.UniformAttribMixin",
     "shadow.ShadowSkipBannerPatternsMixin",
     "shadow.ShadowSkipGlintMixin",
     "shadow.ShadowSkipNameTagMixin",
