@@ -31,6 +31,11 @@ The full history is in git: upstream commits, then Visus commits on top.
   - `NOTICE` rewritten.
 - **No code changes.**
 
+## 2026-11-06: Visus 0.2.2
+- **`MixinParticleEngine`** (V-10): the OPAQUE phase draws only opaque types and the TRANSLUCENT phase the rest
+  (`dev.visus.particle.ParticlePhases`). A new `@Redirect` on `ParticleRenderType.begin` classifies modded types once
+  from the GL blend and depth-write state. The filtered key-set views are cached.
+
 ## 2026-11-06: Visus 0.2.1
 - **`ExtendedShader`** (V-17): `apply()` always calls `glUseProgram`. The static `lastApplied` skip is removed; it went
   stale when Flywheel bound program 0 between irisflw's compile-time `bind()` and the first draw.

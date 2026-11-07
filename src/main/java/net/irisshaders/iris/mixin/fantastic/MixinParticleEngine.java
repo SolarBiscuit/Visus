@@ -1,6 +1,11 @@
 package net.irisshaders.iris.mixin.fantastic;
 
 import com.google.common.collect.ImmutableSet;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import dev.visus.particle.ParticlePhases;
+import net.irisshaders.iris.Iris;
+import net.minecraft.client.renderer.texture.TextureManager;
+import org.lwjgl.opengl.GL11C;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -68,6 +73,18 @@ public class MixinParticleEngine implements PhasedParticleEngine {
 		);
 	}
 
+	// Visus V-10: one phase per type; modded types are classified by the state their begin() sets up.
+	@Unique
+	private static final ParticlePhases<ParticleRenderType> VISUS_PHASES = new ParticlePhases<>(OPAQUE_PARTICLE_RENDER_TYPES,
+		List.of(ParticleRenderType.TERRAIN_SHEET, ParticleRenderType.PARTICLE_SHEET_OPAQUE, ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT,
+			ParticleRenderType.PARTICLE_SHEET_LIT, ParticleRenderType.CUSTOM, ParticleRenderType.NO_RENDER));
+
+	// Live filtered views of particles.keySet(), made once: Forge's TreeMap keeps its comparator order through them.
+	@Unique
+	private Set<ParticleRenderType> visus$opaqueTypes;
+	@Unique
+	private Set<ParticleRenderType> visus$translucentTypes;
+
 	@Unique
 	private ParticleRenderingPhase phase = ParticleRenderingPhase.EVERYTHING;
 
@@ -80,15 +97,35 @@ public class MixinParticleEngine implements PhasedParticleEngine {
 	private Set<ParticleRenderType> iris$selectParticlesToRender(Map<ParticleRenderType, Queue<Particle>> instance) {
 		Set<ParticleRenderType> keySet = instance.keySet();
 
+		// Visus V-10: Oculus's opaque filter was "everything except PARTICLE_SHEET_TRANSLUCENT", so modded types (and
+		// TERRAIN_SHEET) drew in both phases. Each type now draws in exactly one.
 		if (phase == ParticleRenderingPhase.TRANSLUCENT) {
-			// Remove all known opaque particle texture sheets.
-			return Sets.filter(keySet, type -> !OPAQUE_PARTICLE_RENDER_TYPES.contains(type));
+			if (visus$translucentTypes == null) {
+				visus$translucentTypes = Sets.filter(keySet, VISUS_PHASES::drawsInTranslucentPhase);
+			}
+			return visus$translucentTypes;
 		} else if (phase == ParticleRenderingPhase.OPAQUE) {
-			// Render only opaque particle sheets
-			return Sets.filter(keySet, type -> !type.equals(ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT));
+			if (visus$opaqueTypes == null) {
+				visus$opaqueTypes = Sets.filter(keySet, VISUS_PHASES::drawsInOpaquePhase);
+			}
+			return visus$opaqueTypes;
 		} else {
 			// Don't override particle rendering
 			return keySet;
+		}
+	}
+
+	/** Visus V-10: the first time a modded type draws, read the blend and depth-write state its begin() set up. */
+	@Redirect(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/culling/Frustum;)V",
+		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/ParticleRenderType;begin(Lcom/mojang/blaze3d/vertex/BufferBuilder;Lnet/minecraft/client/renderer/texture/TextureManager;)V", remap = true), remap = false)
+	private void visus$beginAndClassify(ParticleRenderType type, BufferBuilder builder, TextureManager textureManager) {
+		type.begin(builder, textureManager);
+
+		if (VISUS_PHASES.needsProbe(type)) {
+			boolean blend = GL11C.glIsEnabled(GL11C.GL_BLEND);
+			boolean depthWrite = GL11C.glGetBoolean(GL11C.GL_DEPTH_WRITEMASK);
+			ParticlePhases.Kind kind = VISUS_PHASES.learn(type, blend, depthWrite);
+			Iris.logger.debug("Particle render type " + type + " (" + type.getClass().getName() + ") draws in the " + kind + " phase");
 		}
 	}
 

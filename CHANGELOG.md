@@ -5,6 +5,21 @@ Versioning:
 - +0.1.0 when a change adds or removes 500+ lines (patch resets to 0).
 - 1.0.0 only when requested.
 
+## 0.2.2 (2026-11-06)
+- **Modded particles draw once (V-10).**
+  - With a pack's default `particles.ordering = mixed`, Oculus drew every modded particle type, and vanilla's
+    `TERRAIN_SHEET`, in both of its particle phases: once with the opaque program before translucent terrain, then
+    again after it. That doubled the cost and blended translucent particles twice.
+  - Each type now draws in exactly one phase. Known opaque sheets draw in the opaque phase; everything else draws
+    after translucent terrain, where vanilla draws all particles.
+  - The first time a modded type draws, Visus reads the blending and depth-write state its `begin()` set (once per
+    type). A type that draws without blending and writes depth moves to the opaque phase.
+  - The order is Forge's: `ParticleEngine.particles` is a `TreeMap` sorted by Forge's particle comparator, and the
+    phase filters keep it. oculusparticlefix only re-sorted that already sorted map, and it cannot apply to Oculus 1.8 (it
+    targets the old `net.coderbot` package).
+  - The two filtered views are made once, not every frame.
+- **Tests:** 5 new T0 tests (`ParticlePhasesTest`), including the Oculus filters drawing a modded type twice.
+
 ## 0.2.1 (2026-11-06)
 - **No GL errors on the first Flywheel draw (V-17).**
   - Each new irisflw instancing program drew its first frame with no program bound, so all of its uniform uploads failed.
