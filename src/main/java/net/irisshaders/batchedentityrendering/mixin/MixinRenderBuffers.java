@@ -27,6 +27,10 @@ public class MixinRenderBuffers implements RenderBuffersExt, MemoryTrackingRende
 	private int begins = 0;
 	@Unique
 	private int maxBegins = 0;
+	// Visus (CoO batching.skipWithoutShaders): begin/end pairs skipped because no shader pack was in use. Counted so a
+	// skipped begin always pairs with its own end, even if a pack is toggled in between.
+	@Unique
+	private int visus$skippedBegins = 0;
 	@Shadow
 	@Final
 	private MultiBufferSource.BufferSource bufferSource;
@@ -77,6 +81,13 @@ public class MixinRenderBuffers implements RenderBuffersExt, MemoryTrackingRende
 
 	@Override
 	public void beginLevelRendering() {
+		if (visus$skippedBegins > 0 || (begins == 0 && dev.visus.config.VisusConfig.get().skipBatchingWithoutShaders
+			&& !net.irisshaders.iris.Iris.isPackInUseQuick())) {
+			// Without a shader pack the batched buffers change nothing on screen; vanilla's buffer source is cheaper.
+			visus$skippedBegins++;
+			return;
+		}
+
 		if (begins == 0) {
 			buffered.assertWrapStackEmpty();
 		}
@@ -88,6 +99,11 @@ public class MixinRenderBuffers implements RenderBuffersExt, MemoryTrackingRende
 
 	@Override
 	public void endLevelRendering() {
+		if (visus$skippedBegins > 0) {
+			visus$skippedBegins--;
+			return;
+		}
+
 		begins -= 1;
 
 		if (begins == 0) {

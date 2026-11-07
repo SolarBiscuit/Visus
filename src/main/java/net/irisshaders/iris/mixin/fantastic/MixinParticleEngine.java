@@ -125,7 +125,7 @@ public class MixinParticleEngine implements PhasedParticleEngine {
 			boolean blend = GL11C.glIsEnabled(GL11C.GL_BLEND);
 			boolean depthWrite = GL11C.glGetBoolean(GL11C.GL_DEPTH_WRITEMASK);
 			ParticlePhases.Kind kind = VISUS_PHASES.learn(type, blend, depthWrite);
-			Iris.logger.debug("Particle render type " + type + " (" + type.getClass().getName() + ") draws in the " + kind + " phase");
+			Iris.logger.info("Particle render type " + type + " (" + type.getClass().getName() + ") draws in the " + kind + " phase");
 		}
 	}
 

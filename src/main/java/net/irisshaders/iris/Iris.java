@@ -811,6 +811,14 @@ public class Iris {
 
 		irisConfig = new IrisConfig(FMLPaths.CONFIGDIR.get().resolve(MODID + ".properties"));
 
+		// Visus settings (shadow skip list and batching skip, built in from CoO): config/visus.properties.
+		try {
+			dev.visus.config.VisusConfig visusConfig = dev.visus.config.VisusConfig.init(FMLPaths.CONFIGDIR.get());
+			logger.info("Visus settings loaded from " + dev.visus.config.VisusConfig.FILE_NAME + " (" + visusConfig.source + ")");
+		} catch (IOException e) {
+			logger.error("Failed to load " + dev.visus.config.VisusConfig.FILE_NAME + "; using defaults", e);
+		}
+
 		try {
 			irisConfig.initialize();
 		} catch (IOException e) {

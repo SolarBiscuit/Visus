@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "plugin": "dev.visus.compat.geckolib.GeckoLibCompatMixinPlugin",
+  "package": "dev.visus.compat.geckolib.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "GeoModelMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

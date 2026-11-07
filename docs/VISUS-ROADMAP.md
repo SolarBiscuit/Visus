@@ -184,6 +184,10 @@ If a command fails to start, report the error and stop.
   5. **Particles:** Forge comparator order; classify by render state.
   6. **Add-on guard:** remove the mixin configs of irisflw, oculusparticlefix, geckoanimfix and Oculus Unlocked; show a toast and log a line. Fall back to `(,0)` declarations if that is unsafe.
   7. A JFR frame event equivalent to RatOpt's `ratopt.Frame`, so clientbench works without RatOpt's Oculus module.
+     - **Done differently (0.2.4): not needed.** `ratopt.Frame` and swap timing come from RatOpt's general JFR and
+       frame-timing mixins, not from `oculus_shaders`, so they keep working after the alias bump. RatOpt's
+       `FrameTimingOculusMixin` names Visus's composite passes; its targets are now all in the ABI freeze (the census
+       missed `@At(target = ...)` members until 0.2.4).
   8. **V-06b (moved here from 0.2.0):** the deferred blend and depth/colour-mask overrides (`MixinGlStateManager_BlendOverride`, `_DepthColorOverride`) against Forge stage events.
      - Start from the T5 reproduction: Atmospherics' horizon fade with its workaround removed.
      - 0.2.0 only made the framebuffer and program bind caches safe (V-14). The DSA texture binds already update `GlStateManager`.

@@ -9,6 +9,7 @@
 //   METHOD  <owner>#<name><desc>                      a method reference
 //   MIXIN   <target>                                  @Mixin target
 //   INJECT  <target>#<selector>                       method selector in @Inject/@Redirect/@ModifyArg/...
+//   (an @At(target = ...) naming a frozen member is recorded as a METHOD or FIELD entry; since 2026-11-06)
 //   SHADOW  <target>#<name>                           @Shadow / @Accessor / @Invoker member
 //   REFLECT <string>                                  string constant naming a frozen package
 // Each line ends with "\t<jar>" listing the dependents (comma separated).
@@ -42,6 +43,7 @@ public class AbiCensus {
         final Set<String> strings = new TreeSet<>();
         final List<String> mixinTargets = new ArrayList<>();
         final List<String> selectors = new ArrayList<>();   // raw selectors from injector annotations
+        final List<String> atTargets = new ArrayList<>();   // @At(target = "Lowner;member...") injection points
         final List<String> shadows = new ArrayList<>();     // member names
     }
 
@@ -150,6 +152,8 @@ public class AbiCensus {
                     if (s.startsWith("L") && s.endsWith(";")) s = s.substring(1, s.length() - 1);
                     ci.mixinTargets.add(s.replace('.', '/'));
                 }
+            } else if (type.equals("Lorg/spongepowered/asm/mixin/injection/At;") && key.equals("target")) {
+                for (Object v : vals) ci.atTargets.add(v.toString());
             } else if (isInjector && key.equals("method")) {
                 for (Object v : vals) ci.selectors.add(v.toString());
             } else if (isShadowLike && key.equals("value")) {
@@ -219,6 +223,16 @@ public class AbiCensus {
                     for (String f : ci.fieldRefs) if (frozen(f.substring(0, f.indexOf('#')))) add(entries, "FIELD\t" + f, dep);
                     for (String m : ci.methodRefs) if (frozen(m.substring(0, m.indexOf('#')))) add(entries, "METHOD\t" + m, dep);
                     for (String s : ci.strings) for (String p : FROZEN_DOT) if (s.contains(p)) add(entries, "REFLECT\t" + s, dep);
+                    // An injection point naming a frozen member (an INVOKE or FIELD target) depends on that member too.
+                    for (String at : ci.atTargets) {
+                        if (!at.startsWith("L") || at.indexOf(';') < 0) continue;
+                        String owner = at.substring(1, at.indexOf(';'));
+                        String member = at.substring(at.indexOf(';') + 1);
+                        if (!frozen(owner) || member.isEmpty()) continue;
+                        int colon = member.indexOf(':');
+                        if (colon >= 0) add(entries, "FIELD	" + owner + "#" + member.substring(0, colon) + ":" + member.substring(colon + 1), dep);
+                        else if (member.contains("(")) add(entries, "METHOD	" + owner + "#" + member, dep);
+                    }
                     for (String t : ci.mixinTargets) {
                         if (!frozen(t)) continue;
                         add(entries, "MIXIN\t" + t, dep);

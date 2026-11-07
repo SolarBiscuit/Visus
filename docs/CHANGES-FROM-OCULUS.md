@@ -31,6 +31,17 @@ The full history is in git: upstream commits, then Visus commits on top.
   - `NOTICE` rewritten.
 - **No code changes.**
 
+## 2026-11-06: Visus 0.2.4
+- **`MixinRenderBuffers`** (batched entity rendering): `beginLevelRendering`/`endLevelRendering` are skipped, as a
+  counted pair, while no shader pack is in use and `batching.skipWithoutShaders` is on.
+- **`Iris.onEarlyInitialize`** loads `dev.visus.config.VisusConfig` (`config/visus.properties`).
+- New Visus mixins (`mixins.visus.json`, package `dev.visus.mixin.shadow`) for the shadow skip list. No Oculus file
+  changed for them.
+
+## 2026-11-06: Visus 0.2.3
+- No Oculus file changed. New `mixins.visus.compat.geckolib.json` (`dev.visus.compat.geckolib`).
+- **`MixinParticleEngine`**: the one-time particle classification line is logged at info.
+
 ## 2026-11-06: Visus 0.2.2
 - **`MixinParticleEngine`** (V-10): the OPAQUE phase draws only opaque types and the TRANSLUCENT phase the rest
   (`dev.visus.particle.ParticlePhases`). A new `@Redirect` on `ParticleRenderType.begin` classifies modded types once

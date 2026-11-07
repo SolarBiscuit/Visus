@@ -115,12 +115,28 @@ def scene_setup(tl):
               % (x, PY, PZ - 6.5, armor_nbt(kind)))
     for slot, item in CURIOS:
         tl.at(4, 'curios replace %s 0 @p with %s' % (slot, item))
+    # Shadow skip list (0.2.4): sign text, banner patterns, a visible name tag, glinting items, all in sun shadow range.
+    tl.at(4, "setblock %d %d %d minecraft:oak_sign[rotation=0]{front_text:{messages:['\"Visus\"','\"shadow\"','\"skip\"','\"test\"']}}"
+          % (PX - 5, PY, PZ - 2))
+    tl.at(4, 'setblock %d %d %d minecraft:white_banner[rotation=0]{Patterns:[{Pattern:"cr",Color:14},{Pattern:"bo",Color:11},{Pattern:"mc",Color:4}]}'
+          % (PX + 5, PY, PZ - 2))
+    tl.at(4, "summon armor_stand %.1f %d %.1f {CustomName:'\"Visus T5\"',CustomNameVisible:1b,NoGravity:1b,Invulnerable:1b,Rotation:[0f,0f],"
+             'HandItems:[{id:"minecraft:diamond_sword",Count:1b,tag:{Enchantments:[{id:"sharpness",lvl:5s}]}},{}]}'
+          % (PX + 3.5, PY, PZ - 1.5))
+
+
+# Modded particle types for V-10 (0.2.2): any with a non-vanilla ParticleRenderType get classified once and logged.
+# Parameterless types only; one that needs options fails to load as its own function and is listed in the report.
+PARTICLES = ['biomesoplenty:glowworm', 'biomesoplenty:jacaranda_leaves', 'aether:crystal_leaves', 'mekanism:radiation',
+             'supplementaries:confetti', 'atmospheric:aloe_blossom', 'deep_aether:clover', 'quark:attractor']
 
 
 def plan_nest(tl, start, phases, phase_s):
-    """Alternating player outfits. Returns the end time."""
+    """Alternating player outfits, with modded particles around the stands. Returns the end time."""
     t = start
     for n in range(phases):
+        for i, pt in enumerate(PARTICLES):
+            tl.at(t + 1, 'particle %s %.1f %d %.1f 2 1 1 0.02 60 force' % (pt, PX - 3.5 + i, PY + 1, PZ - 4.5))
         if n % 2 == 0:
             player_phase(tl, t, 'mekasuit')
             tl.mark(t, 'nest_a %d' % n)

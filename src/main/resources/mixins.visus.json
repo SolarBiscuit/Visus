@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.visus.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "shadow.ShadowSkipBannerPatternsMixin",
+    "shadow.ShadowSkipGlintMixin",
+    "shadow.ShadowSkipNameTagMixin",
+    "shadow.ShadowSkipSignTextMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

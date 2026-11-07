@@ -5,6 +5,42 @@ Versioning:
 - +0.1.0 when a change adds or removes 500+ lines (patch resets to 0).
 - 1.0.0 only when requested.
 
+## 0.2.4 (2026-11-06)
+- **Collections of Optimizations' `[oculus]` options are built in** (architecture §4.4).
+  - In the shadow pass Visus skips sign text, entity name tags and banner pattern layers (the base cloth still casts
+    its shadow), and items report no enchantment glint. None of these are visible in shadows; each costs draw calls.
+  - While no shader pack is in use, entities draw through vanilla's buffer source instead of Oculus's batched one,
+    which only rebuilds a translucency graph per frame for no visible difference. A skipped begin is counted, so it
+    always pairs with its own end even when a pack is toggled in between.
+  - The switches are in the new `config/visus.properties` (`shadow.skipSignText`, `shadow.skipGlint`,
+    `shadow.skipNameTags`, `shadow.skipBannerPatterns`, `batching.skipWithoutShaders`), all on by default. When the
+    file is first created, the user's values are copied once from `collections_of_optimizations-common.toml`.
+  - CoO's own `[oculus]` mixins still work alongside; they do the same thing.
+- **ABI census records injection points.** `tools/abi/AbiCensus.java` now also records members named in
+  `@At(target = ...)`. Re-running it on RatPack 2.9 added 5 entries that RatOptimization and NeoVoxy depend on (for
+  example `CompositeRenderer#renderAll`, used by RatOpt's frame timing, and `SodiumTerrainPipeline#patchShaders`).
+  Nothing was removed. `abiCheck`: 252 entries, 0 missing.
+- **Measured** (T5 scenarios 1, 5 and 9 against Oculus 1.8.0 with the same plan, Photon; the scene now also has a
+  sign, a patterned banner, a visible name tag, an enchanted sword and modded particles): PASS, no new ERROR kinds.
+  `visus.properties` was created from the pack's CoO values. Quark's magnet particles (a custom
+  `PARTICLE_SHEET_ADDITIVE_TRANSLUCENT` type) were classified once, into the translucent phase. The 0.2.3 run of the
+  same plan also passed, with the GeckoLib fix applied next to AllTheLeaks' own `GeoModel` mixin.
+- **Tests:** 3 new T0 tests (`VisusConfigTest`: defaults, one-time migration, bad values).
+
+## 0.2.3 (2026-11-06)
+- **GeckoLib animations in both passes (V-09).**
+  - GeckoLib 4 skips posing a model's bones when the same instance renders again at the same frame time. With a
+    shader pack every entity renders twice per frame, shadow pass first, so the main-pass render of a GeckoLib mob or
+    armor piece returned early and skipped `tickAnimation` and `setCustomAnimations`.
+  - Visus forgets GeckoLib's "last rendered instance" whenever rendering switches between the shadow and the main
+    pass. Animation time still advances once per frame; both passes pose the bones.
+  - An injection at the head of `GeoModel.handleAnimations`, applied only to GeckoLib 4.x, with no GeckoLib
+    dependency. GeckoLibOculusCompat replaced the whole method with a copy from an older GeckoLib, which dropped
+    4.8's partial-tick timing for entities; GeckoLib's own timing is kept here.
+- The first time a modded particle render type draws, its phase is logged once (V-10).
+- **Tests:** 4 new T0 tests (`RenderPassTrackerTest`), replaying GeckoLib 4.8.4's early return: a lone mob is posed
+  only in the shadow pass without the fix and in both with it.
+
 ## 0.2.2 (2026-11-06)
 - **Modded particles draw once (V-10).**
   - With a pack's default `particles.ordering = mixed`, Oculus drew every modded particle type, and vanilla's
