@@ -24,6 +24,16 @@ Versioning:
     two 0.2.0 debug runs of the same jar gave 126.0–140.4 and 151.6–152.7 FPS, so this is within single-run noise;
     no T4 was run. The 0.3.0 T4 rechecks overview p99.
 
+- **0.2.0 acceptance, measured on this build** (no code change):
+  - T5 scenarios 1, 5 and 9 with the new `tools/t5/t5.py` harness: PASS against Oculus 1.8.0 with the same plan
+    (no new ERROR kinds). Reload order matches Oculus at every step. No "Already in a group". The stencil main
+    target (`GL_DEPTH32F_STENCIL8`, from Voidscape) and 4 dimension changes run without depth-format errors.
+  - 30-minute nesting soak: PASS (60 outfit and camera phases, no GL messages).
+  - T4, Complementary Unbound r5.9.3 (3 Visus runs alternating with Oculus, plus one extra Oculus run): base
+    146.1 → 144.9 FPS (−0.8 %), overview 112.3 → 114.5 FPS (+2.0 %). Within noise.
+  - Found V-18: irisflw deletes its programs twice on each pipeline destroy (GL error 0x3F6). The same happens with
+    Oculus. Fixed by the 0.3.0 Flywheel backend.
+
 ## 0.2.0 (2026-11-06) "Stability"
 Crash and corruption fixes. No pack-visible change except `centerDepth.fsh`'s NaN guard. Bug IDs refer to
 `docs/VISUS-ARCHITECTURE.md` §7.

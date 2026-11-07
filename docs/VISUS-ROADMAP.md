@@ -138,20 +138,23 @@ If a command fails to start, report the error and stop.
   - T4 within noise.
   - No `Already in a group` in 30 minutes of the nesting scene.
 - **Delegation:** Opus does V-05 and the L0 state cache. Sonnet does V-01…V-04, V-06 and L8, each starting from a failing test. Haiku runs T0, T1 and T2.
-- **Status (2026-11-06): built, not yet fully accepted.**
+- **Status (2026-11-06): ✅ accepted with Visus 0.2.1.**
   - Done:
     - V-01 (re-entrant counter and self-heal), V-02, V-03, V-04, V-05, V-06, V-14, V-16 and L8 (rate limit, game-log copies, toast).
     - V-17 in 0.2.1: GL error 0x4AE on the first Flywheel draw (stale `ExtendedShader` bind skip, the same as in Oculus 1.8.0).
     - Upstream Oculus fixes #760 and #763.
-  - Passed so far:
+  - Passed:
     - T0: 36 tests.
     - T1: identical on all 5 packs.
     - T2: 0 missing.
-    - T4 on Photon: within noise, 3+3 runs.
-  - Still open:
-    - T5 scenarios 1, 5 and 9.
-    - The 30-minute nesting scene.
-    - T4 on a second pack.
+    - T4 on Photon (0.2.0): within noise, 3+3 runs.
+    - T4 on Complementary Unbound (0.2.1): within noise. 3 Visus runs, each alternating with an Oculus run, plus one extra Oculus run. Base 146.1 → 144.9 FPS (−0.8 %), overview 112.3 → 114.5 FPS (+2.0 %). Overview p99 16.9 → 14.6 ms is one Oculus outlier (21.8 ms), not a gain.
+    - T5 scenarios 1, 5 and 9 (`tools/t5/t5.py`, 0.2.1 against Oculus 1.8.0 with the same plan): no new ERROR kinds, no crash.
+      - 1: K off/on twice, pack switch, option apply, F3+T, F3+A. AtmospheraLib's transitions match Oculus at every step (17 features back on "off", the new pack named on "on" and on the switch).
+      - 5: Mekasuit and GeckoLib Fantasy Armor on the player with Artifacts curios, an elytra and a backpack, plus armor stands and zombies. No "Already in a group".
+      - 9: Voidscape's paranoia overlay switched the main target to `GL_DEPTH32F_STENCIL8` mid-game, across 4 dimension changes. No depth-format error. Only GL messages: V-18 (irisflw, same as Oculus; 0.3).
+      - `Visus - Common` does not exist yet, so the Ad Astra suit (5) and IE (9) parts are still to do there.
+    - Nesting soak: 30 minutes of alternating outfits and camera views (60 phases). No "Already in a group", no GL messages, no crash.
 - **Done differently:**
   - **V-01:** only the crash fix shipped. The sort-key ordering with FIFO order moved to 0.6, item 4, because it changes draw order and needs T3.
   - **V-02:** Oculus's arithmetic is kept bit for bit (no `fma`), so finite results do not change.
