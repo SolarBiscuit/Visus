@@ -9,7 +9,7 @@ Root      C:\Users\epici\Desktop\My Modding Development\Original Mods\Forge\[1.2
 Build     Architectury Loom 1.4 (as upstream Oculus), Forge 47.1.105 (neoforged maven), official mappings, Java 17
           JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-17.0.20.8-hotspot ; gradlew --no-daemon build (runs abiCheck)
 Commands  gradlew build | gradlew test | gradlew abiCheck | gradlew checkForbiddenResources
-Jar       build/libs/visus-1.20.1-<ver>.jar   mod ids: alias oculus (first; 1.8.0 until 0.3.0, then 1.8.100) + visus
+Jar       build/libs/visus-1.20.1-<ver>.jar   mod ids: alias oculus (first; 1.8.0 until the compile service, then 1.8.100) + visus
 T1 dump   bench.py run <tag> --shaders <pack.zip> --dump-shaders [...]; python -I tools/golden/diff_dumps.py <ref> <cand>
 Client    Prism "RatPack 2.9 - TestClient" (copy it to "Visus - Test" before swapping jars)
           prismlauncher.exe --launch "Visus - Test" --world VisusTest --offline VisusTester
@@ -171,6 +171,9 @@ If a command fails to start, report the error and stop.
 - **Context to load:** A§4.3, A§4.4, A§4.6, A§4.7, A§5 L2 (parallel, warm-up), A§5 L5 particles, A§7 V-08…V-11.
 - **Scope:**
   1. **Native Flywheel 1.0.x backend:**
+     - **Done differently (0.3.0):** irisflw 2.0.5 (MIT) absorbed as `dev.visus.flywheel` instead of written anew;
+       T1 identical to irisflw, V-18 fixed. Uniform memoisation is already in Flywheel 1.0.x. The `flw_light` arity
+       choice is open until a Flywheel build with the other forms can be tested (Create 6 instance).
      - Choose the `flw_light` call from the AST (3, 4 or 5 arguments).
      - In the shadow pass, bind the LUT, cull data and matrices.
      - Memoise uniform locations, including -1.

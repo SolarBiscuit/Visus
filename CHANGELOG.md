@@ -5,6 +5,29 @@ Versioning:
 - +0.1.0 when a change adds or removes 500+ lines (patch resets to 0).
 - 1.0.0 only when requested.
 
+## 0.3.0 (2026-11-06) "Absorb", part 1: Flywheel
+- **Oculus Flywheel Compat is built in** (architecture §4.6). Its code (irisflw 2.0.5, MIT, by Red Face) is now part of
+  Visus as `dev.visus.flywheel`, with the MIT notice kept (`META-INF/visus/irisflw-LICENSE`, `NOTICE`).
+  - Flywheel instances (Vanillin's block entities and entities in RatPack, Create 6 contraptions elsewhere) draw
+    through the shader pack's programs, in the main and the shadow pass, as with irisflw.
+  - Loaded only when Flywheel is installed. The backend is `visus:iris_instancing`.
+  - irisflw itself is now declared incompatible (two copies would register two backends): remove
+    `oculus-flywheel-compat` when updating.
+- **No more GL error on every pipeline rebuild (V-18).** irisflw deleted its programs on top of the Iris pipeline,
+  which had already deleted them, raising GL error 0x3F6 on every dimension change and pack toggle. The pipeline now
+  deletes them, once.
+- **No leaked program objects.** irisflw created an empty GL program for every Flywheel program it compiled under a
+  shader pack and never used or deleted it.
+- **V-08 status:** Flywheel 1.0.x already remembers uniform locations, including missing ones, so the `_flw_` uniform
+  spam does not happen with it. Choosing the `flw_light` call from the shader's own declaration is still open:
+  Flywheel 1.0.4 only has the 3-argument form, and no build with the other forms is available to test against.
+- The `oculus` alias stays 1.8.0 until the compile service absorbs RatOpt's `oculus_shaders`.
+- **Measured** (clientbench, RatPack 2.9 TestClient with irisflw removed, Photon):
+  - T1: all 460 transformed files, Flywheel programs included, identical to Visus 0.2.1 with irisflw 2.0.3.
+  - T5 scenarios 1, 5 and 9 against Oculus 1.8.0 + irisflw: PASS, no new or missing ERROR kinds. 0 GL debug messages
+    over 15 pipeline rebuilds (irisflw runs: 0x3F6 on each).
+  - Not yet checked by eye: Flywheel instances in the shadow map (needs a Vanillin or Create scene in T3).
+
 ## 0.2.5 (2026-11-06)
 - **Add-on guard** (architecture §4.3).
   - Visus declares GeckoLibOculusCompat (`geckoanimfix`) and Oculus Particle Fix as incompatible

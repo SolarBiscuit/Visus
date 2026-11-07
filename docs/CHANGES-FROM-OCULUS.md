@@ -31,6 +31,15 @@ The full history is in git: upstream commits, then Visus commits on top.
   - `NOTICE` rewritten.
 - **No code changes.**
 
+## 2026-11-06: Visus 0.3.0
+- New `dev.visus.flywheel` (irisflw 2.0.5, MIT; see `NOTICE`), with its mixin configs
+  `mixins.visus.flywheel*.json` (applied only with Flywheel installed) and its shaders under
+  `assets/flywheel/flywheel/internal/iris_instancing`. Changes from irisflw: package and backend id renamed;
+  `IrisFlwCompatGlProgramBase.deleteInternal` is a no-op (V-18); `IrisProgramLinker` creates its own GL program only on
+  the non-shader path; the `@Mod` entry point is replaced by `FlywheelSetup` (called from `dev.visus.Visus`).
+- `mods.toml`: `irisflw` declared incompatible.
+- No Oculus file changed.
+
 ## 2026-11-06: Visus 0.2.5
 - **Upstream #789** (`b3b278134`, MoePus) cherry-picked: `embeddium_version` 0.3.31-beta.53, `CuboidMixin` implements
   `embeddium$getSimpleCuboid`.

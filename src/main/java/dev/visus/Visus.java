@@ -28,6 +28,12 @@ public final class Visus {
 		ModLoadingContext.get().registerExtensionPoint(IExtensionPoint.DisplayTest.class,
 			() -> new IExtensionPoint.DisplayTest(() -> NetworkConstants.IGNORESERVERONLY, (remote, network) -> true));
 		LOGGER.info("Visus {} loaded (Oculus-compatible alias {})", version(MODID), version("oculus"));
+
+		// The Flywheel backend (absorbed from irisflw) only exists when Flywheel is installed. FlywheelSetup is the
+		// only class here that references Flywheel, so it is never loaded otherwise.
+		if (net.minecraftforge.fml.ModList.get().isLoaded("flywheel")) {
+			dev.visus.flywheel.FlywheelSetup.init();
+		}
 	}
 
 	private static String version(String modId) {

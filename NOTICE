@@ -31,6 +31,9 @@ Bundled third-party libraries (shipped inside the Visus jar)
 - JCPP 1.4.14 by Shevek / Anarres (Apache-2.0), jar-in-jar
 - Ithaka Digraph (de.odysseus.ithaka.digraph, Apache-2.0), vendored source
 - Stareval by Kroppeb (kroppeb.stareval), vendored source, part of Iris
+- Iris Flywheel Compat (irisflw) 2.0.5 by Red Face (https://github.com/leon-o/iris-flw-compat), MIT licence,
+  adapted as dev.visus.flywheel (Java sources and the assets/flywheel/flywheel/internal/iris_instancing shaders).
+  Copyright (c) 2022 Red Face. The licence text is in META-INF/visus/irisflw-LICENSE.
 
 The visus-api module (when present) is written from scratch, contains no Oculus, Iris or glsl-transformer
 code, and is licensed under the MIT licence. Mods that use only visus-api are not bound by the AGPL.

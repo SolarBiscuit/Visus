@@ -23,7 +23,10 @@ loom {
 				"mixins.oculus.compat.dh.json",
 				"mixins.oculus.compat.pixelmon.json",
 				"mixins.visus.compat.geckolib.json",
-				"mixins.visus.json"
+				"mixins.visus.json",
+				"mixins.visus.flywheel.json",
+				"mixins.visus.flywheel.iris.json",
+				"mixins.visus.flywheel.forge.json"
 		]
 	}
 	mixin.defaultRefmapName = "oculus-mixins-refmap.json"
@@ -111,6 +114,14 @@ repositories {
 	maven {
 		url "https://maven.neoforged.net/releases"
 	}
+	maven {
+		// Flywheel (Visus's native Flywheel backend, absorbed from irisflw)
+		name = "createmod"
+		url "https://maven.createmod.net/"
+		content {
+			includeGroup "dev.engine-room.flywheel"
+		}
+	}
 	mavenCentral()
 }
 
@@ -121,6 +132,8 @@ dependencies {
 
 	modImplementation "org.embeddedt:embeddium-${minecraft_version}:${embeddium_version}"
 	modCompileOnly("maven.modrinth:distanthorizonsapi:3.0.0")
+	// Optional at runtime: the Flywheel backend only loads when Flywheel is installed (Vanillin, Create 6).
+	modCompileOnly("dev.engine-room.flywheel:flywheel-forge-${minecraft_version}:${flywheel_version}")
 
 	forgeRuntimeLibrary(implementation(shadow(project(path: ":glsl-relocated", configuration: "bundledJar")))) {
 		transitive = false
@@ -171,7 +184,7 @@ remapJar {
 }
 
 jar {
-	from(files('LICENSE', 'COPYING.LESSER', 'COPYING.GPL-3.0', 'NOTICE')) { into 'META-INF/visus' }
+	from(files('LICENSE', 'COPYING.LESSER', 'COPYING.GPL-3.0', 'NOTICE', 'licenses/irisflw-LICENSE')) { into 'META-INF/visus' }
 	from sourceSets.sodiumCompatibility.output
 	from sourceSets.vendored.output
 	from sourceSets.desktop.output

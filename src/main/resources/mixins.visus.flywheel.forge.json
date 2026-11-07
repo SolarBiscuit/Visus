@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "dev.visus.flywheel.forge.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "MixinModelBlockRenderer"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "plugin": "dev.visus.flywheel.FlywheelMixinPlugin"
+}

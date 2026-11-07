@@ -1,0 +1,22 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "dev.visus.flywheel.mixin.flw",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "MixinFlwPrograms",
+    "MixinProgramStitcher",
+    "ShaderCompilerAccessor",
+    "FlwCompilationAccessor",
+    "MixinPipelineCompiler",
+    "PipelineCompilerAccessor",
+    "vertex.MixinMeshHelper",
+    "SimpleQuadMeshAccessor",
+    "MixinPooledMesh",
+    "vertex.MixinMeshEmitter"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "plugin": "dev.visus.flywheel.FlywheelMixinPlugin"
+}

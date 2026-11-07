@@ -8,7 +8,7 @@ Start here, then read only what your task needs:
 
 ## Decisions (2026-11-06)
 - Fork and re-architect Oculus 1.8.0. Licence: the jar is AGPL-3.0-only (because glsl-transformer is AGPL); files from Oculus/Iris stay LGPL-3.0-only (`docs/spikes/licences.md`). Keep `net.irisshaders.*` shapes listed in `abi/abi-freeze.txt`.
-- Mod ids: alias `oculus` (FIRST `[[mods]]` entry; 1.8.0 until 0.3.0, then 1.8.100) and `visus`, `provides=["iris"]` (a no-op on FML 47).
+- Mod ids: alias `oculus` (FIRST `[[mods]]` entry; 1.8.0 until the compile service absorbs RatOpt `oculus_shaders` (0.3.x), then 1.8.100) and `visus`, `provides=["iris"]` (a no-op on FML 47).
 - Visus absorbs irisflw, oculusparticlefix, GeckoLibOculusCompat, RatOpt `oculus_shaders` and CoO `[oculus]`.
 - NeoVoxy is co-developed against `dev.visus.api.lod`. Release them in lockstep.
 - `visus-api` is MIT and written from scratch. No Oculus-derived code or GLSL goes in it.

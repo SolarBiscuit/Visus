@@ -6,7 +6,7 @@ license="AGPL-3.0-only"
 # Visus ships two mod entries. "visus" is the real mod and carries the real version.
 # "oculus" is a compatibility alias: mods check ModList.isLoaded("oculus") / LoadingModList, and declare
 # dependencies like oculus [1.8.0,) or [1.7.0,). Until 0.3.0 the alias is exactly 1.8.0, so add-ons pinned to 1.8.0
-# (RatOptimization's oculus_shaders module) keep patching the unchanged internals; from 0.3.0 it moves to 1.8.100 and
+# (RatOptimization's oculus_shaders module) keep patching the unchanged internals; with the compile service (0.3.x) it moves to 1.8.100 and
 # those add-ons switch off because Visus takes over their work.
 # The "oculus" entry must stay FIRST: FML's ModFileInfo.versionString() (used by ImmediatelyFast, RatOptimization and
 # others through LoadingModList) returns the first entry's version, which must read as the 1.8.x alias, not 0.1.0.
@@ -55,6 +55,14 @@ side = "CLIENT"
 # GeckoLibOculusCompat: built in since 0.2.3 (GeckoLib 4.8.4 itself also refuses to load with it).
 [[dependencies.visus]]
 modId = "geckoanimfix"
+mandatory = false
+versionRange = "(,0)"
+ordering = "NONE"
+side = "CLIENT"
+
+# Oculus Flywheel Compat (irisflw): built in since 0.3.0 (dev.visus.flywheel); two copies would register two backends.
+[[dependencies.visus]]
+modId = "irisflw"
 mandatory = false
 versionRange = "(,0)"
 ordering = "NONE"
