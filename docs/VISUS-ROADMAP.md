@@ -183,6 +183,9 @@ If a command fails to start, report the error and stop.
   4. **GeckoLib 4.8.x:** per-frame animation state with a read-only shadow pass (injection, version guarded).
   5. **Particles:** Forge comparator order; classify by render state.
   6. **Add-on guard:** remove the mixin configs of irisflw, oculusparticlefix, geckoanimfix and Oculus Unlocked; show a toast and log a line. Fall back to `(,0)` declarations if that is unsafe.
+     - **Done differently (0.2.5): the `(,0)` fallback.** Removing configs at load time could not reach configs Forge
+       registers after Visus's plugin runs (Oculus Particle Fix's among them). `geckoanimfix` and `oculusparticlefix`
+       are declared incompatible now; irisflw joins with the native Flywheel backend, Oculus Unlocked in 0.7.
   7. A JFR frame event equivalent to RatOpt's `ratopt.Frame`, so clientbench works without RatOpt's Oculus module.
      - **Done differently (0.2.4): not needed.** `ratopt.Frame` and swap timing come from RatOpt's general JFR and
        frame-timing mixins, not from `oculus_shaders`, so they keep working after the alias bump. RatOpt's

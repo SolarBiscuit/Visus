@@ -31,6 +31,11 @@ The full history is in git: upstream commits, then Visus commits on top.
   - `NOTICE` rewritten.
 - **No code changes.**
 
+## 2026-11-06: Visus 0.2.5
+- **Upstream #789** (`b3b278134`, MoePus) cherry-picked: `embeddium_version` 0.3.31-beta.53, `CuboidMixin` implements
+  `embeddium$getSimpleCuboid`.
+- **`mods.toml`**: `geckoanimfix` and `oculusparticlefix` declared incompatible (optional, `versionRange = "(,0)"`).
+
 ## 2026-11-06: Visus 0.2.4
 - **`MixinRenderBuffers`** (batched entity rendering): `beginLevelRendering`/`endLevelRendering` are skipped, as a
   counted pair, while no shader pack is in use and `batching.skipWithoutShaders` is on.
@@ -80,4 +85,4 @@ Each change is tagged with its bug-ledger ID from `docs/VISUS-ARCHITECTURE.md` Â
 | `a0b9d31a4` (#760) | Fixes memory corruption in `GlyphExtVertexSerializer` | **In 0.2.0** (cherry-picked) |
 | `3f70af20f` (#763) | Fixes the Mekanism flamethrower crash (`LightningHandler` vertex format) | **In 0.2.0** (cherry-picked) |
 | `b50faac79` (#806) | Adds the `IS_OCULUS` standard macro | 0.8 (pack SDK). It adds a define to every pack program, which 0.2.0's "no pack GLSL change" rule forbids; it goes in with the other feature-flag backports and gets a `golden/CHANGES.md` entry. |
-| `b3b278134` (#789) | Embeddium dev dependency 0.3.14 to 0.3.31; `CuboidMixin` implements `embeddium$getSimpleCuboid` | 0.3.0, with the Embeddium dev dependency bump. Checked against Xenon 0.3.31: only Xenon's `features.render.entity.fast_render` mixins call that method, and Visus's `sodium:options` turns them off, so it cannot be reached today. |
+| `b3b278134` (#789) | Embeddium dev dependency 0.3.14 to 0.3.31; `CuboidMixin` implements `embeddium$getSimpleCuboid` | Adopted in 0.2.5. Only Xenon's `features.render.entity.fast_render` mixins call that method, and Visus's `sodium:options` turns them off, so it cannot be reached today. |

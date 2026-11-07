@@ -5,6 +5,22 @@ Versioning:
 - +0.1.0 when a change adds or removes 500+ lines (patch resets to 0).
 - 1.0.0 only when requested.
 
+## 0.2.5 (2026-11-06)
+- **Add-on guard** (architecture §4.3).
+  - Visus declares GeckoLibOculusCompat (`geckoanimfix`) and Oculus Particle Fix as incompatible
+    (`versionRange = "(,0)"`, the RatPack convention). With either installed, Forge stops at load with "Mod visus only
+    supports oculusparticlefix below 0" instead of starting. Both jobs are built in (0.2.3, 0.2.2).
+  - Before, Oculus Particle Fix's mixin failed to apply to Oculus 1.8 and left the game in a broken mod state, and
+    GeckoLib 4.8.4 already refuses to load with GeckoLibOculusCompat.
+  - Tried first and dropped: emptying the add-ons' mixin configs at load time (the ModernFix technique). Visus's
+    config plugin runs before Forge registers some mods' mixin configs, and those configs never pass through
+    `Mixins.getConfigs()` where the plugin could reach them; Oculus Particle Fix's was one of them.
+  - irisflw is not declared: it stays active until the native Flywheel backend replaces it.
+- **Upstream Oculus #789** (MoePus): built against Embeddium 0.3.31, and `CuboidMixin` implements
+  `embeddium$getSimpleCuboid`, which Xenon 0.3.31's `ModelCuboidAccessor` declares. Today only Xenon's fast-render
+  entity mixins call it, and Visus turns those off, so nothing changes on screen.
+- **Measured:** launching with Oculus Particle Fix installed stops at load with the message above (T5 harness run).
+
 ## 0.2.4 (2026-11-06)
 - **Collections of Optimizations' `[oculus]` options are built in** (architecture §4.4).
   - In the shadow pass Visus skips sign text, entity name tags and banner pattern layers (the base cloth still casts

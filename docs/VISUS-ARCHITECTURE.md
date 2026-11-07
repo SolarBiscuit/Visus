@@ -128,7 +128,9 @@ Mods in RatPack 2.9 that link to `net.irisshaders.*`:
 | RatOpt `oculus_shaders` | Visus compile service (§5 L2) | Self-disables on version ≠ 1.8.0. Visus also logs it. |
 | CoO `[oculus]` section | Visus shadow skip list (§5 L6) | CoO's options become no-ops; Visus reads its config once to migrate the user's choices |
 
-**Mechanism (0.3).** A Visus mixin config plugin runs `onLoad`, walks Mixin's registered configs, and removes those owned by the add-ons above before they are selected. ModernFix uses the same technique. Visus then logs one line and shows a one-time toast: "X is built into Visus; you can remove it". If this proves fragile on Mixin 0.8.5, the fallback is an optional dependency with `versionRange="(,0)"`. That is the RatPack convention for incompatible mods, and it blocks launch with a clear message.
+**Outcome (0.2.5).** The config-removal mechanism below was built and tested: a Visus config plugin's `onLoad` runs before Forge registers some mods' mixin configs, and those never pass through `Mixins.getConfigs()`, so it missed Oculus Particle Fix. Visus uses the `(,0)` fallback instead.
+
+**Mechanism (0.3, superseded).** A Visus mixin config plugin runs `onLoad`, walks Mixin's registered configs, and removes those owned by the add-ons above before they are selected. ModernFix uses the same technique. Visus then logs one line and shows a one-time toast: "X is built into Visus; you can remove it". If this proves fragile on Mixin 0.8.5, the fallback is an optional dependency with `versionRange="(,0)"`. That is the RatPack convention for incompatible mods, and it blocks launch with a clear message.
 
 ### 4.4 RatOpt and CoO absorption
 RatOpt's `oculus_shaders` design becomes Visus's L2 compile service:

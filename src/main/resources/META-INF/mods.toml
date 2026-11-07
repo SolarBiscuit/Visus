@@ -49,6 +49,25 @@ versionRange = "[1.20.1]"
 ordering = "NONE"
 side = "CLIENT"
 
+# Add-on guard (architecture §4.3): add-ons whose job Visus now does itself. An optional dependency on an impossible
+# version range stops the launch with a message naming the add-on (the RatPack convention). Removing their mixin
+# configs at load time was tried in 0.2.5 and could not reach every config Forge registers.
+# GeckoLibOculusCompat: built in since 0.2.3 (GeckoLib 4.8.4 itself also refuses to load with it).
+[[dependencies.visus]]
+modId = "geckoanimfix"
+mandatory = false
+versionRange = "(,0)"
+ordering = "NONE"
+side = "CLIENT"
+
+# Oculus Particle Fix: built in since 0.2.2; its mixin cannot apply to Oculus 1.8 and leaves a broken mod state.
+[[dependencies.visus]]
+modId = "oculusparticlefix"
+mandatory = false
+versionRange = "(,0)"
+ordering = "NONE"
+side = "CLIENT"
+
 [[dependencies.oculus]]
 modId = "minecraft"
 mandatory = true
