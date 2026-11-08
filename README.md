@@ -24,8 +24,8 @@ This is the feature set Visus will have when its [roadmap](#roadmap) is complete
 - **Documented crash and corruption bugs are fixed,** each with a test that fails without the fix: translucency group nesting, NaN in smoothed values, degenerate tangents, infinite clip planes, pipeline swaps, depth formats and stale GL state caches.
 - **No GL error storms.** GL debug messages are de-duplicated and rate-limited, and a pack that fails to compile falls back to vanilla rendering with an error toast instead of a broken frame.
 
-### One jar instead of five
-
+### One jar instead of many
+- **Included community fixes** Original Iris + Oculus has an absurd number of side-compatabiity/fix mods that Visus aims to integrate directly in for a number of contexts. 
 - **Flywheel instancing under shader packs,** built in. Flywheel instances (Vanillin and Create 6) draw through the pack's programs in the main and shadow passes, with no separate Oculus Flywheel Compat jar.
 - **Parallel shader compile service.** Every program is linked ahead of time on the driver's compiler threads or on hidden shared GL contexts, and each path switches itself off on drivers where it does not help.
 - **Shadow skip list.** Sign text, glint, name tags and banner patterns are skipped in the shadow pass, where nothing shows them.
