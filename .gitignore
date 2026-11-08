@@ -58,6 +58,10 @@ runs/
 !/docs/logo/visus-logo-01-voxel-iris.svg
 !/docs/logo/visus-logo-01-voxel-iris-dark.svg
 !/docs/logo/visus-banner.png
+!/docs/logo/visus-icon.svg
+!/docs/logo/visus-icon.png
+!/docs/logo/visus-listing-icon.svg
+!/docs/logo/visus-listing-icon.png
 
 # ---- Test and bench output ----------------------------------------------------
 # Pack dumps contain third-party shader code and can be hundreds of MB. Only the

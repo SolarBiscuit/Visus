@@ -1,4 +1,8 @@
-"""Generate the README art: the banner and the release-gates chart.
+"""Generate the release-gates chart for the README.
+
+The banner and the duotone icon now come from the Atmosphera branding scripts
+(`[1.20.1] Atmosphera/branding/gen_readme_art_extra.py visus`), so this script no longer writes the banner;
+the old `banner()` below is kept only for reference.
 
     python -I tools/branding/gen_readme_art.py
 
@@ -143,11 +147,12 @@ def chip(d, x, y, text, f, fg, bg):
 def chart():
     # (label, baseline text, baseline fraction 1.0, target text, target fraction, release, note)
     rows = [
-        ("Terrain program link wait", "172.6 ms average (Oculus 1.8.0)", "\u2264 20 ms", 20 / 172.6, "0.3.0"),
-        ("Shadow-pass entity CPU, MakeUp", "0.54 ms per frame (Oculus 1.8.0)", "\u2265 20 % lower", 0.80, "0.3.0"),
-        ("Pack apply, cold start", "previous release = 100 %", "\u2265 50 % faster", 0.50, "0.5.0"),
-        ("Pack apply, warm start", "previous release = 100 %", "\u2265 80 % faster", 0.20, "0.5.0"),
-        ("CPU-bound frame time, MakeUp", "p50 under Oculus 1.8.0 = 100 %", "p50 \u2265 8 % better", 0.92, "0.6.0"),
+        ("Terrain program link wait", "172.6 ms average (Oculus 1.8.0)", "\u2264 20 ms", 20 / 172.6, "met in 0.4.0",
+         (3.6 / 172.6, "measured: 3.6 ms")),
+        ("Shadow-pass entity CPU, MakeUp", "0.54 ms per frame (Oculus 1.8.0)", "\u2265 20 % lower", 0.80, "Absorb, not yet measured"),
+        ("Pack apply, cold start", "previous release = 100 %", "\u2265 50 % faster", 0.50, "Fast load"),
+        ("Pack apply, warm start", "previous release = 100 %", "\u2265 80 % faster", 0.20, "Fast load"),
+        ("CPU-bound frame time, MakeUp", "p50 under Oculus 1.8.0 = 100 %", "p50 \u2265 8 % better", 0.92, "Frame cost"),
     ]
     W = 2000
     top, rowh = 330, 190
@@ -162,15 +167,15 @@ def chart():
     f_chip = font("bahnschrift.ttf", 28, "SemiBold")
 
     d.text((70, 60), "Release gates: where Visus is aiming", font=f_title, fill=INK)
-    d.text((70, 150), "Solid bars are measured baselines. Outlined bars are release gates (targets), not results.", font=f_sub, fill=MUTED)
+    d.text((70, 150), "Dim bars are measured baselines. Outlined bars are release gates (targets); a solid bright bar is a measured result.", font=f_sub, fill=MUTED)
     d.text((70, 196), "Each gate is a pass/fail test in docs/VISUS-ROADMAP.md; a failed gate is dropped and reported.", font=f_sub, fill=MUTED)
 
     x0, barw = 70, W - 140
     d.line([(70, 260), (W - 70, 260)], fill=GRID, width=2)
-    for i, (label, base, tgt, frac, rel) in enumerate(rows):
+    for i, (label, base, tgt, frac, rel, *meas) in enumerate(rows):
         y = top + i * rowh - 30
         d.text((x0, y), label, font=f_lab, fill=INK)
-        chip(d, W - 70 - 130, y + 2, rel, f_chip, BG, TEAL)
+        chip(d, W - 70 - int(d.textlength(rel, font=f_chip) + 36), y + 2, rel, f_chip, BG, TEAL)
         by = y + 62
         bh = 40
         # baseline
@@ -180,6 +185,11 @@ def chart():
         ty = by + bh + 14
         tw = max(int(barw * frac), 12)
         d.rounded_rectangle([x0, ty, x0 + tw, ty + bh], radius=8, fill=PANEL, outline=TEAL, width=4)
+        if meas:  # a measured result: solid bar, drawn over the gate outline
+            mw = max(int(barw * meas[0][0]), 12)
+            d.rounded_rectangle([x0, ty, x0 + mw, ty + bh], radius=8, fill=TEAL)
+            d.text((x0 + tw + 18, ty + 3), f"{meas[0][1]}, gate: {tgt}", font=f_val, fill=TEAL)
+            continue
         label_w = d.textlength("gate: " + tgt, font=f_val)
         if x0 + tw + 18 + label_w > W - 70:
             d.text((x0 + 16, ty + 3), "gate: " + tgt, font=f_val, fill=TEAL)  # long bar: label inside
@@ -188,7 +198,7 @@ def chart():
     fy = H - 120
     d.line([(70, fy - 20), (W - 70, fy - 20)], fill=GRID, width=2)
     d.text((70, fy), "Baselines measured on the RatPack 2.9 test client (499 mods), RX 7900 XTX. Bench noise is \u00b15\u20136 %.", font=f_sub, fill=MUTED)
-    d.text((70, fy + 44), "Visus 0.1.x changes no rendering: no gate above has been claimed yet.", font=f_sub, fill=MUTED)
+    d.text((70, fy + 44), "Only the terrain link-wait gate has been measured so far (0.4.0); the others are targets, not results.", font=f_sub, fill=MUTED)
 
     OUT_CHART.parent.mkdir(parents=True, exist_ok=True)
     img.save(OUT_CHART, optimize=True)
@@ -196,5 +206,4 @@ def chart():
 
 
 if __name__ == "__main__":
-    banner()
     chart()
