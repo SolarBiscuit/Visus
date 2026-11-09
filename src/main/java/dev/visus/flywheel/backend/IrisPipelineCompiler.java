@@ -29,6 +29,7 @@ import dev.engine_room.flywheel.lib.material.CutoutShaders;
 import dev.engine_room.flywheel.lib.util.ResourceUtil;
 import net.minecraft.resources.ResourceLocation;
 import dev.visus.flywheel.IrisFlw;
+import dev.visus.flywheel.flywheel.IrisFlwCompatGlProgramBase;
 import dev.visus.flywheel.mixin.flw.PipelineCompilerAccessor;
 
 import java.util.*;
@@ -193,6 +194,12 @@ public class IrisPipelineCompiler {
                             .accept(program);
                     key.contextShader()
                             .onLink(program);
+
+                    // Visus V-06b: bind() ran the pack program's apply(), which takes its blend lock; irisflw never
+                    // cleared it, so every mod draw after a Flywheel compile had its blend calls dropped.
+                    if (program instanceof IrisFlwCompatGlProgramBase compat) {
+                        compat.clear();
+                    }
 
                     GlProgram.unbind();
                 });

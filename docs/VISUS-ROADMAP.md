@@ -64,6 +64,8 @@ If a command fails to start, report the error and stop.
 | RC | Release candidate | 0.9 | Full matrix, Java 17/21/25, Common instance | Sonnet; Opus fixes |
 | 1.0.0 | Only when the user calls it | RC | — | — |
 
+**Release numbers as shipped (2026-11-08).** The version rule moved the numbers from 0.3 on. "Absorb" shipped as 0.2.2–0.4.1 (0.3.0 Flywheel, 0.4.0 compile service, 0.4.1 V-06b). Each capsule from "APIs" on ships one minor higher than its heading says: "APIs" is 0.5.0, "Fast load" is 0.6.0, and so on. The capsule headings keep their planned numbers so that cross-references stay valid.
+
 ---
 
 ## 0.1.0 "Baseline"
@@ -213,6 +215,19 @@ If a command fails to start, report the error and stop.
   - T4: cold apply on the 7900 XTX is no worse than RatOpt's numbers (66 programs in 0.5–8.0 s), and the terrain link wait drops from 172.6 ms average to ≤ 20 ms.
   - Shadow-pass entity CPU on MakeUp drops ≥ 20 % (from 0.54 ms).
 - **Delegation:** Opus does the Flywheel backend and the compile service. Sonnet does 3–7. Sonnet runs T4 and T5.
+- **Status (2026-11-09): closed with Visus 0.4.1.** It shipped as 0.2.2 to 0.4.1; see `CHANGELOG.md`.
+  - **Done:** items 1 (Flywheel built in, V-18), 2 (compile service), 3 (CoO skips), 4 (GeckoLib, V-09), 5 (particles, V-10), 6 (add-on guard via `(,0)`), 8 (V-06b, 0.4.1) and 9 (#789). Item 7 was not needed.
+  - **Measured (0.4.1):**
+    - T1 identical on all 5 packs.
+    - T5 s1, s3, s4, s5, s6 and s9 PASS on Photon.
+    - Terrain link wait 3.6 ms: gate met.
+    - Pipeline builds equal to RatOpt.
+    - T4 CU within noise apart from an unexplained early-batch overview dip.
+  - **Not met:** shadow-pass entity CPU on MakeUp, −6.8 % against a gate of −20 %. The skips stay; they are CoO's behaviour.
+  - **Still open:**
+    - V-08 `flw_light` arity, and the Create 6 halves of T5 s3/s5/s9. Both wait for `Visus - Common`.
+    - The Flywheel instances in the shadow map have not been checked by eye: the s3 camera framing misses them.
+    - The terrain warm-up and the apply progress screen are optional, since the link-wait gate is met.
 
 ## 0.4.0 "APIs"
 - **Goal:** formal, MIT-licensed extension points. NeoVoxy moves off its 24 internal mixins and Atmosphera off reflection.
@@ -288,7 +303,7 @@ If a command fails to start, report the error and stop.
 
 ## 0.8.0 "Pack SDK"
 - **Goal:** good documentation and tools for pack authors; feature parity with upstream Iris where packs use it.
-- **Context to load:** A§8, A§3.3, the spike `docs/spikes/upstream-features.md` (from 0.1.0).
+- **Context to load:** A§8, A§3.3, the upstream feature-flag spike in `docs/spikes/0.1.0-spikes.md` (from 0.1.0).
 - **Scope:**
   - `docs/packdev/`: the uniforms reference generated from catalog annotations, the properties reference, feature flags, `visus.*` extensions, debugging, mod integration, and differences from Oculus.
   - Debug tools: an error screen with line numbers mapped through `#include`, `KHR_debug` labels, a GPU pass-timing overlay, a render-target viewer, `/visus dump`.

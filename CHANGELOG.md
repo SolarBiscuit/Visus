@@ -5,6 +5,40 @@ Versioning:
 - +0.1.0 when a change adds or removes 500+ lines (patch resets to 0).
 - 1.0.0 only when requested.
 
+## 0.4.1 (2026-11-09)
+- **Mod rendering keeps its blend state after a Flywheel compile (V-06b).**
+  - When Flywheel compiled a program under a shader pack, the Flywheel backend (from irisflw) applied the pack program, which took its blend lock, and never released it.
+  - Until some later pack draw released it, every `GlStateManager` blend call was dropped. That included the blend calls of mods drawing from Forge `RenderLevelStageEvent` handlers.
+  - The post-link setup now clears the program.
+  - A guard at every Forge render-stage dispatch releases any blend or depth/colour-mask lock that is still held. A lock can't legitimately be held between draws. The guard logs the first leak of each kind (`[V-06b] ...`).
+  - The roadmap's planned reproduction, the Atmospherics horizon fade with its workaround removed, turned out to exercise V-14 (the bind cache, fixed in 0.2.0) instead: that fade is skipped under shader packs.
+- **T5 harness:**
+  - New plans: s3 (Vanillin/Flywheel), s4 (the GeckoLib mob set), s6 (particles) and s8 (LODs under all five packs, for 0.5.0).
+  - New `--jvm-arg` option.
+  - The report now counts leaked locks and particle phases.
+- **Tests:** 5 new T0 tests (`StateLockGuardTest`), 55 in total. The two that check the release fail with it removed.
+- **Measured** (clientbench, RatPack 2.9 TestClient, RX 7900 XTX):
+  - **T1:** identical to Oculus 1.8.0 on all 5 packs: Photon 451, CU 425, Glimmer 458, MakeUp 375, Solas 427 files. The only extra files are the allowed Flywheel programs.
+  - **T5:** s3, s4, s6, s5, s9 and s1 on Photon, against Oculus 1.8.0 + irisflw + RatOpt with the same plan:
+    - PASS: no new ERROR kinds, 0 GL debug messages, no "Already in a group", no leaked lock logged.
+    - The GeckoLib mobs and armor stands cast the same shadows in both.
+    - The s3 framing missed the Flywheel block entities, so their shadows are still unchecked by eye.
+  - **Pipeline builds, same runs:**
+    - First load: 66 programs in 1.2 s (Oculus + RatOpt 1.5 s).
+    - Warm reloads: 0.61–0.67 s (0.60–0.70 s).
+    - CU switch: 2.2 s (2.3 s).
+    - Terrain: the same throughout.
+    - This settles 0.4.0's open question: warm reloads are not slower.
+  - **T4, Complementary Unbound.** The first batch (Oculus first in each pair) looked 10 % slower, but both sides decayed over the hour and two Visus runs had 15–24 % external CPU. The rerun put Visus first:
+    - Base within noise: fps −3.8 %, p99 +2.6 %.
+    - Overview pooled: −11 %, all from the first two Visus runs (94–95 fps). The third pair is at parity (116.0 against 116.4 fps).
+    - 0.4.0 → 0.4.1 back to back: within noise (fps −1.5 % / −2.3 %).
+    - Not a demonstrated regression. The early-batch overview dip is open: it was seen only in Visus runs, and external load does not explain it.
+  - **Shadow-pass entity CPU on MakeUp** (gate from 0.3 "Absorb": at least 20 % lower):
+    - 3.34 against 3.58 ms per frame (−6.8 %), 3+3 runs, inclusive render-thread samples under `ShadowRenderer.renderEntities`. **Gate not met.**
+    - The CoO shadow skips stay: they do what CoO's own options did, at no cost.
+    - The earlier 0.39–0.54 ms baseline used a narrower sample definition, so the two sets of numbers are not comparable.
+
 ## 0.4.0 (2026-11-07) "Absorb", part 2: compile service
 - **Shader pack loading is parallel, built in** (architecture §4.4, §5 L2). RatOptimization's `oculus_shaders`
   module is now Visus's compile service (`dev.visus.compile`, MIT code by SolarBiscuit, see `NOTICE`):

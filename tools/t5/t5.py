@@ -19,6 +19,14 @@ Scenarios:
   must stay clean.
 - s1 (reload): K off/on twice, switch pack (config edit + R), change a pack option (+ R), F3+T, F3+A. Atmosphera's
   "[Atmosphera] <feature> ..." transitions after each step must name the new pack state.
+- s3 (Flywheel): Vanillin chests, shulker boxes, a bell and minecarts on rails, in sun shadow range; screenshots from
+  back and front views to check them in the shadow map.
+- s4 (GeckoLib): ten GeckoLib 4.8 mobs from five mods (NoAI, idle animations), in both passes.
+- s6 (particles): Simple Blood, Wakes, BOP, Supplementaries and vanilla particles in bursts under a leaf canopy
+  (Falling Leaves).
+- s8 (LOD, Visus 0.5): from a high overlook, the five RatPack packs in turn (config edit + R), with screenshots of
+  NeoVoxy's LODs under each. Use with --jvm-arg -Dmixin.debug.verbose=true, so the report can count NeoVoxy mixins
+  applied to Oculus classes (expected 0 on the Visus API path).
 - soak: s5 phases alternating for --minutes.
 
 Keys are posted to the game window with PostMessage (WM_KEYDOWN/WM_KEYUP), so nothing reaches other windows even if
@@ -147,6 +155,90 @@ def plan_nest(tl, start, phases, phase_s):
     return t
 
 
+# s3/s4/s6 stand in a row north of the s5 stands (the player faces north), on an extension of the platform.
+ROW_Z = PZ - 12
+
+# s3: Vanillin 1.1.3 draws these through Flywheel (block entities and minecarts), so with a pack they go through
+# Visus's Flywheel backend in the main and the shadow pass.
+VANILLIN_BLOCKS = ['minecraft:chest[facing=south]', 'minecraft:trapped_chest[facing=south]', 'minecraft:ender_chest[facing=south]',
+                   'minecraft:shulker_box', 'minecraft:red_shulker_box', 'minecraft:bell[attachment=floor,facing=south]']
+VANILLIN_ENTITIES = ['minecart', 'chest_minecart', 'furnace_minecart', 'hopper_minecart']
+
+# s4: GeckoLib 4.8.4 mobs (ids from each mod's lang file). NoAI keeps them in view; their idle animations still play.
+GECKOLIB_MOBS = ['creeperoverhaul:jungle_creeper', 'creeperoverhaul:desert_creeper', 'endermanoverhaul:badlands_enderman',
+                 'endermanoverhaul:cave_enderman', 'crittersandcompanions:ferret', 'crittersandcompanions:dragonfly',
+                 'faunify:hedgehog', 'faunify:fennec', 'ghosts:ghost', 'ghosts:small_ghost']
+
+# s6: particle mods in the bench instance. Falling Leaves spawns from the leaf canopy by itself; Cave Dust only spawns
+# underground, and Visuality's particles are spawned by its own code only (`/particle` does not know them: "Unknown
+# particle: visuality:soul"), so neither is covered here.
+S6_PARTICLES = ['simpleblood:blood', 'wakes:splash_cloud', 'biomesoplenty:jacaranda_leaves', 'supplementaries:confetti',
+                'minecraft:cherry_leaves', 'minecraft:spore_blossom_air', 'minecraft:campfire_cosy_smoke',
+                'minecraft:end_rod', 'minecraft:snowflake', 'minecraft:falling_water']
+
+SCENE_S = 40  # length of one s3/s4/s6 phase
+
+
+def scene_row_clear(tl, sec):
+    tl.at(sec, 'fill %d %d %d %d %d %d minecraft:air' % (PX - 8, PY, ROW_Z - 3, PX + 8, PY + 8, ROW_Z + 1))
+    tl.at(sec, 'kill @e[type=!player,x=%d,y=%d,z=%d,dx=16,dy=8,dz=4]' % (PX - 8, PY, ROW_Z - 3))
+
+
+def plan_vanillin(tl, start):
+    tl.at(start, 'fill %d %d %d %d %d %d minecraft:smooth_stone' % (PX - 8, PY - 1, ROW_Z - 4, PX + 8, PY - 1, PZ - 10))
+    scene_row_clear(tl, start)
+    for i, b in enumerate(VANILLIN_BLOCKS):
+        tl.at(start + 1, 'setblock %d %d %d %s' % (PX - 5 + i * 2, PY, ROW_Z, b))
+    tl.at(start + 1, 'fill %d %d %d %d %d %d minecraft:rail[shape=east_west]' % (PX - 4, PY, ROW_Z - 2, PX + 4, PY, ROW_Z - 2))
+    for i, e in enumerate(VANILLIN_ENTITIES):
+        tl.at(start + 2, 'summon %s %.1f %d %.1f {Invulnerable:1b}' % (e, PX - 3 + i * 2 + 0.5, PY, ROW_Z - 1.5))
+    tl.mark(start + 3, 's3')
+    return start + 3 + SCENE_S
+
+
+def plan_geckolib(tl, start):
+    scene_row_clear(tl, start)
+    for i, mob in enumerate(GECKOLIB_MOBS):
+        tl.at(start + 1, 'summon %s %.1f %d %.1f {NoAI:1b,Silent:1b,Invulnerable:1b,PersistenceRequired:1b,Rotation:[0f,0f]}'
+              % (mob, PX - 6 + i * 1.4 + 0.5, PY, ROW_Z + 0.5))
+    tl.mark(start + 3, 's4')
+    return start + 3 + SCENE_S
+
+
+def plan_particles(tl, start):
+    scene_row_clear(tl, start)
+    tl.at(start + 1, 'fill %d %d %d %d %d %d minecraft:oak_leaves[persistent=true]' % (PX - 6, PY + 6, ROW_Z - 2, PX + 6, PY + 6, ROW_Z))
+    tl.mark(start + 3, 's6')
+    for k in range(0, SCENE_S, 4):
+        for i, pt in enumerate(S6_PARTICLES):
+            tl.at(start + 3 + k, 'particle %s %.1f %d %.1f 0.6 1 0.6 0.02 40 force' % (pt, PX - 5.5 + i * 1.2, PY + 1, ROW_Z + 0.5))
+    return start + 3 + SCENE_S
+
+
+# s8: the five RatPack packs, matched by file-name prefix in shaderpacks/.
+S8_PACK_PREFIXES = ['ComplementaryUnbound', 'photon', 'Glimmer', 'MakeUp', 'Solas']
+
+
+def plan_lod_overlook(tl, start):
+    """High above the platform, looking north over the terrain, so LODs fill the horizon. Spectator mode keeps the
+    player in place while the packs are switched."""
+    tl.at(start, 'gamemode spectator @a')
+    tl.at(start + 1, 'tp @a %.1f %d %.1f 180 8' % (PX + 0.5, PY + 90, PZ + 0.5))
+    tl.mark(start + 3, 's8_view')
+    return start + 5
+
+
+def s8_packs():
+    folder = GAME / 'shaderpacks'
+    names = sorted(p.name for p in folder.iterdir()) if folder.exists() else []
+    packs = []
+    for prefix in S8_PACK_PREFIXES:
+        match = next((n for n in names if n.lower().startswith(prefix.lower()) and not n.endswith('.txt')), None)
+        if match:
+            packs.append(match)
+    return packs
+
+
 VOID = 'voidscape:void'
 VY = 100
 
@@ -261,6 +353,20 @@ def press(hwnd, *names):
 
 # ---------------------------------------------------------------------------------------------------- config edits
 
+def add_jvm_args(extra):
+    """Appends JVM arguments to the bench instance's JvmArgs (after bench wrote it)."""
+    cfg = bench.BENCH / 'instance.cfg'
+    out = []
+    for line in cfg.read_text(encoding='utf-8').splitlines():
+        if line.startswith('JvmArgs='):
+            val = line[len('JvmArgs='):]
+            quoted = val.startswith('"') and val.endswith('"')
+            val = (val.strip('"') + ' ' + ' '.join(extra)).strip()
+            line = 'JvmArgs=' + ('"%s"' % val if quoted else val)
+        out.append(line)
+    cfg.write_text('\n'.join(out) + '\n', encoding='utf-8')
+
+
 def set_props(path, want):
     out = []
     for line in path.read_text(encoding='utf-8').splitlines():
@@ -352,10 +458,20 @@ def cmd_run(a):
     elif 's5' in plan:
         nest_phases = 6
     t = plan_nest(tl, t, nest_phases, phase_s)
+    scenes = []  # (marker) for s3/s4/s6, in timeline order
+    for name, fn in (('s3', plan_vanillin), ('s4', plan_geckolib), ('s6', plan_particles)):
+        if name in plan:
+            t = fn(tl, t)
+            scenes.append(name)
+    if scenes:
+        scene_row_clear(tl, t)
+        t += 2
     stencil_at = None
     if 's9' in plan:
         stencil_at = t
         t = plan_stencil(tl, t)
+    if 's8' in plan:
+        t = plan_lod_overlook(tl, t)
     tl.mark(t, 'scripted_end')
     end_s = t + 2
 
@@ -363,6 +479,8 @@ def cmd_run(a):
     bench.build_template(False)
     bench.swap_mods(a.remove_mod, a.add_mod)
     bench.write_instance_cfg(bench.CFG['profiles']['hi'])
+    if a.jvm_arg:
+        add_jvm_args(a.jvm_arg)
     bench.write_jfc()
     bench.patch_options()
     bench.patch_configs()
@@ -395,16 +513,35 @@ def cmd_run(a):
             wait_marker(r, 'nest_%s %d' % ('a' if n % 2 == 0 else 'b', n), bench.CFG['launch_timeout_s'] if n == 0 else 120)
             r.event('phase', n=n)
             nest_keys(r, phase_s)
+        for i, m in enumerate(scenes):
+            wait_marker(r, m, bench.CFG['launch_timeout_s'] if nest_phases == 0 and i == 0 else 120)
+            r.event('scene', scene=m)
+            nest_keys(r, SCENE_S - 4)
         if stencil_at is not None:
             for m in ('stencil_on', 'stencil_off', 'stencil_on2', 'stencil_end'):
-                wait_marker(r, m, bench.CFG['launch_timeout_s'] if nest_phases == 0 and m == 'stencil_on' else 120)
+                wait_marker(r, m, bench.CFG['launch_timeout_s'] if nest_phases == 0 and not scenes and m == 'stencil_on' else 120)
                 r.event(m)
                 if m.startswith('stencil_on'):
                     r.wait(10)
                     r.tap('F2')
                     r.wait(10)
                     r.tap('F2')
-        wait_marker(r, 'scripted_end', bench.CFG['launch_timeout_s'] if nest_phases == 0 and stencil_at is None else 120)
+        wait_marker(r, 'scripted_end', bench.CFG['launch_timeout_s'] if nest_phases == 0 and not scenes and stencil_at is None else 120)
+        if 's8' in plan:
+            props = GAME / 'config' / 'oculus.properties'
+            for pack in s8_packs():
+                set_props(props, {'shaderPack': pack})
+                r.tap('R')
+                r.event('s8_pack', to=pack, at=r.last_tap)
+                r.wait(50)
+                r.tap('F2')
+                r.wait(8)
+                r.tap('F2')
+                r.wait(4)
+            set_props(props, {'shaderPack': a.pack})
+            r.tap('R')
+            r.event('s8_pack', to=a.pack, at=r.last_tap)
+            r.wait(45)
         if 's1' in plan:
             r.wait(5)
             for n in range(4):
@@ -503,6 +640,14 @@ def analyze(tag, ref=None):
     rep['gl_suppressed_summaries'] = text.count('Repeated debug messages suppressed')
     rep['depth_format_mismatch'] = text.lower().count('depth formats do not match')
     rep['pipeline_null'] = text.count('pipeline is null')
+    rep['v06b_leaked_locks'] = re.findall(r'\[V-06b\] The (.+?) lock was still held at render stage (\w+)', text)
+    rep['api_lod_providers'] = sorted(set(re.findall(r"\[api\] LOD program provider '([^']+)' registered", text)))
+    rep['api_provider_errors'] = len(re.findall(r'\[api\] LOD provider .* could not use pack', text))
+    rep['voxy_iris_pipelines'] = text.count('Creating voxy iris render pipeline')
+    rep['reloads_deferred_from_level_render'] = text.count('Shader reload requested during level rendering')
+    rep['voxy_mixins_into_oculus'] = len(re.findall(r'client\.voxy\.mixins\.json into net\.irisshaders', text))
+    rep['mixin_verbose'] = 'Mixing ' in text
+    rep['particle_phases'] = sorted(set(re.findall(r'Particle render type .*?\((\S+)\) draws in the (\w+) phase', text)))
     rep['failed_functions'] = sorted(set(re.findall(r'Failed to load function (visust5:\w+)', text)))
     rep['crash_reports'] = [e['file'] for e in ev['events'] if e['event'] == 'crash_report']
     rep['markers'] = sorted(set(re.findall(MARK + r' (\w+)', text)))
@@ -573,6 +718,7 @@ def main():
     p.add_argument('--add-mod', action='append', default=[])
     p.add_argument('--ref')
     p.add_argument('--force', action='store_true')
+    p.add_argument('--jvm-arg', action='append', default=[], help='extra JVM argument for the game, repeatable')
     p = sub.add_parser('analyze')
     p.add_argument('tag')
     p.add_argument('--ref')

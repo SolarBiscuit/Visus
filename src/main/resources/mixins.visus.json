@@ -8,6 +8,7 @@
     "compile.ProgramManagerLinkMixin",
     "compile.ShaderInstanceUniformsAccessor",
     "compile.UniformAttribMixin",
+    "gl.ForgeRenderStageLockMixin",
     "shadow.ShadowSkipBannerPatternsMixin",
     "shadow.ShadowSkipGlintMixin",
     "shadow.ShadowSkipNameTagMixin",

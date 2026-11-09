@@ -31,6 +31,13 @@ The full history is in git: upstream commits, then Visus commits on top.
   - `NOTICE` rewritten.
 - **No code changes.**
 
+## 2026-11-08: Visus 0.4.1
+- **`dev.visus.flywheel.backend.IrisPipelineCompiler`** (from irisflw, V-06b): the post-link setup calls the program's
+  `clear()` before `GlProgram.unbind()`, so the pack program's blend lock taken by `bind()` is released.
+- New `dev.visus.gl.StateLockGuard`, `GlStateLocks` and `dev.visus.mixin.gl.ForgeRenderStageLockMixin` (V-06b): at the
+  head of `ForgeHooksClient.dispatchRenderStage` any blend or depth/colour lock still held is released and logged
+  once. No Oculus file changed.
+
 ## 2026-11-07: Visus 0.4.0
 - New `dev.visus.compile` (`ShaderBuild`, `CompileContexts`) and `dev.visus.mixin.compile`, ported from
   RatOptimization's `oculus_shaders` (MIT).

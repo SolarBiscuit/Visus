@@ -81,7 +81,8 @@ The figures below are the project's own measurements, taken with the in-repo har
 | **Pack apply** | 66 programs linked in 1.3 s on first load and 0.9 to 1.1 s on reloads (0.4.0), against a baseline stall of about 45 to 77 s on AMD before parallel compilation |
 | **Terrain link wait** | 3.6 ms average (0.4.0), against 172.6 ms on Oculus 1.8.0 and a gate of 20 ms or less: **met** |
 | **Sync** | 0 GL debug messages over 15 pipeline rebuilds (0.3.0); the separate Flywheel add-on raised GL error 0x3F6 on every one |
-| **Shadow-pass entity CPU** | 0.39 to 0.54 ms per frame on MakeUp, about 12 to 13 % of render-thread busy time on Oculus 1.8.0; gate: at least 20 % lower (not yet measured) |
+| **Shadow-pass entity CPU** | 3.34 against 3.58 ms per frame on MakeUp (−6.8 %, 0.4.1, inclusive render-thread samples); gate: at least 20 % lower: **not met** |
+| **Pipeline build** | 66 programs in 1.2 s on first load against 1.5 s for Oculus 1.8.0 with RatOptimization; warm reloads 0.61 to 0.67 s against 0.60 to 0.70 s (0.4.1) |
 | **Shader transformation** | Identical to Oculus 1.8.0 on every pack tested (Photon 1.3b: all 460 files, Flywheel programs included; Complementary Unbound r5.9.3: 225 programs) |
 
 Pending gates: cold pack apply at least 50 % faster, or warm apply at least 80 % faster; on the CPU-bound pack (MakeUp), p50 frame time at least 8 % better or p99 at least 10 % better with no regression on GPU-bound packs.
