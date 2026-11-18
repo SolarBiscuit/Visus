@@ -162,6 +162,8 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 	private final Set<GlImage> customImages;
 	private final GlImage[] clearImages;
 	private final ShaderPack pack;
+	// Visus (V-13): the program set's folder, for PipelineView#directory.
+	private final String visusDirectory;
 	private final PackShadowDirectives shadowDirectives;
 	private final DHCompat dhCompat;
 	private final int stackSize = 0;
@@ -192,6 +194,7 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 		this.oldLighting = programSet.getPackDirectives().isOldLighting();
 		this.updateNotifier = new FrameUpdateNotifier();
 		this.packDirectives = programSet.getPackDirectives();
+		this.visusDirectory = programSet.getVisusDirectory();
 		this.customTextureMap = programSet.getPackDirectives().getTextureMap();
 		this.separateHardwareSamplers = programSet.getPack().hasFeature(FeatureFlags.SEPARATE_HARDWARE_SAMPLERS);
 		this.shadowDirectives = packDirectives.getShadowDirectives();
@@ -490,7 +493,11 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 		this.setup = createSetupComputes(programSet.getSetup(), programSet, TextureStage.SETUP);
 
 		// first optimization pass
+		// Visus (V-13): keep the custom uniforms LOD providers declared (PackSources#retainUniforms). The optimise()
+		// call itself stays here: NeoVoxy 1.43 wraps it on plain Oculus.
+		Object visusRetention = dev.visus.api.impl.LodHooks.beginRetention(this.customUniforms, programSet.getVisusRetainedUniforms());
 		this.customUniforms.optimise();
+		dev.visus.api.impl.LodHooks.endRetention(this.customUniforms, visusRetention);
 		boolean hasRun = false;
 
 		this.clearPassesFull = ClearPassCreator.createClearPasses(renderTargets, true,
@@ -847,6 +854,8 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 
 	@Override
 	public void beginLevelRendering() {
+		// Visus (V-13): LOD listeners, before any pack pass (and before the activeTexture call NeoVoxy 1.43 targets).
+		dev.visus.api.impl.LodHooks.onBeginLevel(this);
 		isRenderingWorld = true;
 
 		// Make sure we're using texture unit 0 for this.
@@ -1290,6 +1299,39 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 
 	public ImmutableSet<Integer> getFlippedBeforeShadow() {
 		return flippedBeforeShadow;
+	}
+
+	// Visus (V-13): read access for dev.visus.api.impl.PipelineViewImpl. Named apart from NeoVoxy 1.43's accessors.
+	public String visus$directory() {
+		return visusDirectory;
+	}
+
+	public boolean visus$isDestroyed() {
+		return destroyed;
+	}
+
+	public RenderTargets visus$renderTargets() {
+		return renderTargets;
+	}
+
+	public ShaderPack visus$pack() {
+		return pack;
+	}
+
+	public PackDirectives visus$packDirectives() {
+		return packDirectives;
+	}
+
+	public FrameUpdateNotifier visus$updateNotifier() {
+		return updateNotifier;
+	}
+
+	public CustomUniforms visus$customUniforms() {
+		return customUniforms;
+	}
+
+	public ShaderStorageBufferHolder visus$shaderStorageBuffers() {
+		return shaderStorageBufferHolder;
 	}
 
 	public ImmutableSet<Integer> getFlippedAfterPrepare() {

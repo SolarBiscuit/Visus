@@ -22,6 +22,10 @@ import java.util.function.Function;
 
 public class ProgramSet implements ProgramSetInterface {
 	private final PackDirectives packDirectives;
+	// Visus (V-13): pack uniforms LOD providers declared through PackSources#retainUniforms.
+	private final java.util.Set<String> visusRetainedUniforms;
+	// Visus (V-13): this set's folder relative to shaders/ ("" for the root), for PipelineView#directory.
+	private final String visusDirectory;
 
 	private final ProgramSource shadow;
 	private final ComputeSource[] shadowCompute;
@@ -72,7 +76,9 @@ public class ProgramSet implements ProgramSetInterface {
 
 	public ProgramSet(AbsolutePackPath directory, Function<AbsolutePackPath, String> sourceProvider,
 					  ShaderProperties shaderProperties, ShaderPack pack) {
-		this.packDirectives = new PackDirectives(PackRenderTargetDirectives.BASELINE_SUPPORTED_RENDER_TARGETS, shaderProperties);
+		this.packDirectives = new PackDirectives(
+			dev.visus.api.impl.LodHooks.supportedRenderTargets(PackRenderTargetDirectives.BASELINE_SUPPORTED_RENDER_TARGETS),
+			shaderProperties);
 		this.pack = pack;
 
 		// Note: Ensure that blending is properly overridden during the shadow pass. By default, blending is disabled
@@ -157,6 +163,21 @@ public class ProgramSet implements ProgramSetInterface {
 		this.finalCompute = readComputeArray(directory, sourceProvider, "final", shaderProperties);
 
 		locateDirectives();
+
+		// Visus (V-13): LOD providers read their files now, before any pipeline is built from this set.
+		String visusDir = directory.getPathString();
+		this.visusDirectory = visusDir.startsWith("/") ? visusDir.substring(1) : visusDir;
+		this.visusRetainedUniforms = dev.visus.api.impl.LodHooks.onProgramSetBuilt(directory, sourceProvider);
+	}
+
+	/** Visus (V-13): the pack uniforms LOD providers asked to keep through the custom-uniform optimiser. */
+	public java.util.Set<String> getVisusRetainedUniforms() {
+		return visusRetainedUniforms;
+	}
+
+	/** Visus (V-13): this set's folder relative to {@code shaders/}, empty for the pack root. */
+	public String getVisusDirectory() {
+		return visusDirectory;
 	}
 
 	@SafeVarargs

@@ -1,0 +1,68 @@
+// visus-api: the public, MIT-licensed extension API of Visus (docs/VISUS-ARCHITECTURE.md A§4.5, A§10).
+// Plain Java: no Minecraft, Forge or Oculus types, so it compiles and tests without a game.
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+group = 'dev.visus'
+version = project.visus_api_version
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(17) }
+    withSourcesJar()
+    withJavadocJar()
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation(platform("org.junit:junit-bom:5.10.2"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+jar {
+    archiveBaseName = 'visus-api'
+    from('LICENSE') { into 'META-INF/visus-api' }
+    manifest {
+        attributes(
+            'Implementation-Title': 'visus-api',
+            'Implementation-Version': project.version,
+            'Automatic-Module-Name': 'dev.visus.api'
+        )
+    }
+}
+
+javadoc {
+    options.addBooleanOption('Xdoclint:none', true)
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "failed"
+        exceptionFormat "full"
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'visus-api'
+            from components.java
+            pom {
+                name = 'visus-api'
+                description = 'Public extension API of the Visus shader mod (LOD programs, pipeline lifecycle, uniforms).'
+                licenses {
+                    license {
+                        name = 'MIT'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+            }
+        }
+    }
+}

@@ -202,6 +202,14 @@ public class CustomUniforms implements FunctionContext {
 		this.locationMap.put(targetHolder, locations);
 	}
 
+	/**
+	 * Visus (V-13): removes a holder's assigned locations (an API capture or retention marker), so Iris never pushes
+	 * values to it, and returns them.
+	 */
+	public Object2IntMap<CachedUniform> visus$removeHolder(Object holder) {
+		return locationMap.remove(holder);
+	}
+
 	public void mapholderToPass(LocationalUniformHolder holder, Object pass) {
 		locationMap.put(pass, locationMap.remove(holder));
 	}

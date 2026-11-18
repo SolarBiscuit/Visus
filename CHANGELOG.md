@@ -5,6 +5,11 @@ Versioning:
 - +0.1.0 when a change adds or removes 500+ lines (patch resets to 0).
 - 1.0.0 only when requested.
 
+## 0.4.2 (2026-11-17)
+- **Jar metadata: the Oculus alias description is accurate.**
+  - The `oculus` entry in `mods.toml` no longer says "Not a separate mod" without context. It now states that the alias is this same Visus jar, which reports itself as Oculus, and that Oculus must not be installed alongside Visus.
+  - No code change.
+
 ## 0.4.1 (2026-11-09)
 - **Mod rendering keeps its blend state after a Flywheel compile (V-06b).**
   - When Flywheel compiled a program under a shader pack, the Flywheel backend (from irisflw) applied the pack program, which took its blend lock, and never released it.

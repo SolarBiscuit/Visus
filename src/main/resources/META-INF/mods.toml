@@ -19,7 +19,7 @@ displayName="Visus (Oculus compatibility)"
 logoFile="visus-logo.png"
 authors="NanoLive, dima_dencep, coderbot, IMS212, Justsnoopy30, FoundationGames"
 description='''
-Compatibility alias provided by Visus so mods that look for Oculus keep working. Not a separate mod.
+Compatibility alias so mods that look for Oculus keep working. It is not a separate mod: it is this same Visus jar, which reports itself as Oculus. Do not install Oculus alongside Visus.
 '''
 provides = ["iris"]
 displayTest="IGNORE_ALL_VERSION"

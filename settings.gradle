@@ -12,3 +12,4 @@ pluginManagement {
 }
 
 include("glsl-relocated")
+include("visus-api")

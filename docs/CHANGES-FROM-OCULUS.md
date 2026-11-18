@@ -31,6 +31,32 @@ The full history is in git: upstream commits, then Visus commits on top.
   - `NOTICE` rewritten.
 - **No code changes.**
 
+## Visus 0.5.0 (in progress) "APIs"
+Hooks for the public API (`visus-api`, MIT, its own Gradle module; implementation in `dev.visus.api.impl`). With no
+API user registered, every hook is a no-op and pack output is identical to Oculus 1.8.0. Every call site that NeoVoxy
+1.43 wraps on plain Oculus stays where it was.
+- **`ShaderPack`:** after each `ShaderPackSourceNames.findPresentSources` call, the files LOD providers declared are
+  also collected, from the folder and its `program/` subfolder (`LodHooks.addProviderSources`).
+- **`ProgramSet`:**
+  - The supported colour targets come from `LodHooks.supportedRenderTargets` (Oculus's 16 plus provider requests).
+  - At the end of the constructor, providers read their files (`onProgramSetBuilt`).
+  - New getters `getVisusRetainedUniforms()` and `getVisusDirectory()`.
+- **`StandardMacros`:** the Distant Horizons defines are now emitted by `dev.visus.api.impl.DhDefines` (same names,
+  values and order, checked by `DhDefinesTest`), followed by API users' defines. The unused `DHCompat` and
+  `LoadingModList` imports were removed.
+- **`CommonUniforms.addNonDynamicUniforms`:** API users' uniforms first. **`IrisSamplers.addRenderTargetSamplers`:**
+  API users' samplers last.
+- **`ProgramSamplers.builder`:** the reserved texture units include those handed out by `SamplerUnits`.
+- **`CustomUniforms`:** new `visus$removeHolder`.
+- **`IrisRenderingPipeline`:**
+  - Retention of declared custom uniforms around `optimise()`.
+  - `LodHooks.onBeginLevel` at the start of `beginLevelRendering`.
+  - Read-only `visus$*` getters.
+- **`PipelineManager`:** `onPipelineCreated` after a pipeline is created and installed, and `onPipelineDestroyed`
+  before each is destroyed.
+- **`Iris.reloadNow`:** reload listeners at the end.
+- **`IrisRenderSystem`:** new `visus$reapplySamplers()`, used by `GlScope`.
+
 ## 2026-11-08: Visus 0.4.1
 - **`dev.visus.flywheel.backend.IrisPipelineCompiler`** (from irisflw, V-06b): the post-link setup calls the program's
   `clear()` before `GlProgram.unbind()`, so the pack program's blend lock taken by `bind()` is released.

@@ -29,6 +29,10 @@ public final class Visus {
 			() -> new IExtensionPoint.DisplayTest(() -> NetworkConstants.IGNORESERVERONLY, (remote, network) -> true));
 		LOGGER.info("Visus {} loaded (Oculus-compatible alias {})", version(MODID), version("oculus"));
 
+		// The public API (dev.visus:visus-api): installed now, so mods ordered after "visus" find it in their
+		// constructors. Oculus's own code reaches it on first use either way.
+		dev.visus.api.impl.VisusApiImpl.init();
+
 		// The Flywheel backend (absorbed from irisflw) only exists when Flywheel is installed. FlywheelSetup is the
 		// only class here that references Flywheel, so it is never loaded otherwise.
 		if (net.minecraftforge.fml.ModList.get().isLoaded("flywheel")) {

@@ -42,6 +42,10 @@ public class PipelineManager {
 
 				WorldRenderingSettings.INSTANCE.clearReloadRequired();
 			}
+
+			// Visus (V-13): the pipeline is built and installed, so LOD listeners may use it (and may request a
+			// reload; it runs at the next frame boundary). NeoVoxy #30 came from doing this inside the constructor.
+			dev.visus.api.impl.LodHooks.onPipelineCreated(pipeline);
 		} else {
 			pipeline = pipelinesPerDimension.get(currentDimension);
 		}
@@ -117,6 +121,8 @@ public class PipelineManager {
 	public void destroyPipeline() {
 		pipelinesPerDimension.forEach((dimensionId, pipeline) -> {
 			Iris.logger.info("Destroying pipeline {}", dimensionId);
+			// Visus (V-13): LOD listeners release what they built from this pipeline first.
+			dev.visus.api.impl.LodHooks.onPipelineDestroyed(pipeline);
 			resetTextureState();
 			pipeline.destroy();
 		});

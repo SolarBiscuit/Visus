@@ -43,7 +43,8 @@ public class ProgramSamplers {
 	}
 
 	public static Builder builder(int program, Set<Integer> reservedTextureUnits) {
-		return new Builder(program, reservedTextureUnits);
+		// Visus (V-13, NeoVoxy #10): pack samplers never take the texture units handed out by the Visus API.
+		return new Builder(program, dev.visus.api.impl.LodHooks.withReservedUnits(reservedTextureUnits));
 	}
 
 	public static CustomTextureSamplerInterceptor customTextureSamplerInterceptor(SamplerHolder samplerHolder, Object2ObjectMap<String, TextureAccess> customTextureIds) {

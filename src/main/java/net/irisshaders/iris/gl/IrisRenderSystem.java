@@ -385,6 +385,16 @@ public class IrisRenderSystem {
 		samplers[unit] = sampler;
 	}
 
+	/**
+	 * Visus (V-13, NeoVoxy #29): binds every unit's sampler object again as {@link #bindSamplerToUnit} last recorded it,
+	 * after raw GL code may have changed them behind this cache.
+	 */
+	public static void visus$reapplySamplers() {
+		for (int i = 0; i < samplers.length; i++) {
+			GL33C.glBindSampler(i, samplers[i]);
+		}
+	}
+
 	public static void unbindAllSamplers() {
 		boolean usedASampler = false;
 		for (int i = 0; i < samplers.length; i++) {

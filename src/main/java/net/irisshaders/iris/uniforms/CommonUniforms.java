@@ -113,6 +113,8 @@ public final class CommonUniforms {
 	}
 
 	public static void addNonDynamicUniforms(UniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier) {
+		// Visus (V-13): uniforms of mods registered through the Visus API (none without API users).
+		dev.visus.api.impl.LodHooks.addContributorUniforms(uniforms);
 		CameraUniforms.addCameraUniforms(uniforms, updateNotifier);
 		ViewportUniforms.addViewportUniforms(uniforms);
 		WorldTimeUniforms.addWorldTimeUniforms(uniforms);

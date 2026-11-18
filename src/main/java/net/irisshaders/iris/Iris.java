@@ -607,6 +607,10 @@ public class Iris {
 		if (Minecraft.getInstance().level != null) {
 			Iris.getPipelineManager().preparePipeline(Iris.getCurrentDimension());
 		}
+
+		// Visus (V-13): API reload listeners run last: the API state is current and the world renderer was rebuilt
+		// (in preparePipeline) if the new pack required it.
+		dev.visus.api.impl.LodHooks.onReloaded();
 	}
 
 	/**

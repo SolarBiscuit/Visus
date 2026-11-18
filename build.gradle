@@ -139,6 +139,8 @@ dependencies {
 		transitive = false
 	}
 	forgeRuntimeLibrary(implementation(include("org.anarres:jcpp:1.4.14")))
+	// The public API (MIT). Jar-in-jar, not shaded: a mod that also bundles it then resolves to one copy (the newest).
+	forgeRuntimeLibrary(implementation(include(project(":visus-api"))))
 
 	testImplementation(platform("org.junit:junit-bom:5.10.2"))
 	testImplementation("org.junit.jupiter:junit-jupiter")
@@ -246,4 +248,36 @@ tasks.register('checkForbiddenResources') {
 	}
 }
 
-tasks.named('check') { dependsOn 'checkForbiddenResources', 'abiCheck' }
+// The MIT/AGPL boundary (docs/VISUS-ARCHITECTURE.md A§10): visus-api is written from scratch and may depend on nothing
+// Oculus-derived or Minecraft-specific. Every source carries the MIT header, and the API jar holds only dev/visus/api.
+tasks.register('checkApiBoundary') {
+	group = 'verification'
+	def apiProject = project(':visus-api')
+	dependsOn apiProject.tasks.named('jar')
+	def sources = apiProject.fileTree('src') { include '**/*.java' }
+	def apiJar = apiProject.tasks.named('jar').flatMap { it.archiveFile }
+	inputs.files(sources)
+	inputs.file(apiJar)
+	doLast {
+		def forbidden = ~/^\s*import\s+(static\s+)?(net\.irisshaders|net\.coderbot|net\.minecraft|com\.mojang|net\.minecraftforge|net\.neoforged|org\.embeddedt|me\.jellysquid)\b.*/
+		def problems = []
+		sources.each { File f ->
+			def lines = f.readLines('UTF-8')
+			if (!lines.take(3).any { it.contains('SPDX-License-Identifier: MIT') }) {
+				problems << "${f.name}: missing the MIT header"
+			}
+			lines.eachWithIndex { line, i ->
+				if (line ==~ forbidden) problems << "${f.name}:${i + 1}: ${line.trim()}"
+			}
+		}
+		zipTree(apiJar.get().asFile).visit { d ->
+			def p = d.relativePath.pathString
+			if (!d.directory && p.endsWith('.class') && !p.startsWith('dev/visus/api/')) problems << "visus-api jar: ${p}"
+		}
+		if (!problems.isEmpty()) {
+			throw new GradleException("visus-api boundary check failed:\n  " + problems.join('\n  '))
+		}
+	}
+}
+
+tasks.named('check') { dependsOn 'checkForbiddenResources', 'abiCheck', 'checkApiBoundary' }

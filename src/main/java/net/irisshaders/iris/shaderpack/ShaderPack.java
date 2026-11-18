@@ -109,6 +109,8 @@ public class ShaderPack {
 
 		ShaderPackSourceNames.findPresentSources(starts, root, AbsolutePackPath.fromAbsolutePath("/"),
 			potentialFileNames);
+		// Visus (V-13): files that registered LOD providers read (for example voxy.json), also under program/.
+		dev.visus.api.impl.LodHooks.addProviderSources(starts, root, AbsolutePackPath.fromAbsolutePath("/"));
 
 		dimensionIds = new ArrayList<>();
 
@@ -140,8 +142,10 @@ public class ShaderPack {
 		}
 
 		for (String id : dimensionIdCreator) {
+			// Visus (V-13): non-short-circuit OR, so provider files are collected even when pack sources were found.
 			if (ShaderPackSourceNames.findPresentSources(starts, root, AbsolutePackPath.fromAbsolutePath("/" + id),
-				potentialFileNames)) {
+				potentialFileNames)
+				| dev.visus.api.impl.LodHooks.addProviderSources(starts, root, AbsolutePackPath.fromAbsolutePath("/" + id))) {
 				dimensionIds.add(id);
 			}
 		}
